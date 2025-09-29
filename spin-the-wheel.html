@@ -261,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const radius = canvas.width / 2 - 10;
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-        ctx.font = `bold ${Math.max(12, 18 - numSegments / 2)}px Poppins`;
+        ctx.font = `bold ${Math.max(12, 18 - numSegments)}px Poppins`;
 
         wheelSegments.forEach((entry, i) => {
             const startAngle = i * anglePerSegment;
@@ -414,16 +414,27 @@ document.addEventListener('DOMContentLoaded', () => {
         shuffleBtn.disabled = true;
 
         buildWheelSegments(); // Ensure segments are up to date
+        if (wheelSegments.length < 2) {
+             isSpinning = false;
+             updateEntriesList(); // re-enable buttons if needed
+             return;
+        }
+
         const winningIndex = await getWinningIndex(wheelSegments);
         
         const anglePerSegment = 360 / wheelSegments.length;
         const segmentCenter = (winningIndex * anglePerSegment) + (anglePerSegment / 2);
         
         const randomOffset = (Math.random() - 0.5) * anglePerSegment * 0.8;
-        const baseSpins = 5 * 360;
-        const finalRotation = baseSpins - segmentCenter + randomOffset;
         
-        currentRotation += finalRotation;
+        // Correct calculation for target angle: 270 degrees is the top pointer
+        const targetAngle = 270 - segmentCenter - randomOffset;
+        
+        // Calculate number of spins to ensure it goes forward and spins at least 5 times
+        const fullSpins = 5;
+        const newRotation = (Math.floor(currentRotation / 360) + fullSpins) * 360 + targetAngle;
+        
+        currentRotation = newRotation;
         canvas.style.transform = `rotate(${currentRotation}deg)`;
         
         setTimeout(() => {
