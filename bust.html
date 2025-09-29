@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bust! - STEPZ DEBATES</title>
+    <style>
+        /* --- FONT IMPORT --- */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+        /* --- GLOBAL STYLES & VARIABLES --- */
+        :root {
+            --background-color: #121212;
+            --card-color: #1e1e1e;
+            --primary-accent: #b328a4; /* Vibrant magenta/purple from logo */
+            --text-color: #ffffff;
+            --text-muted: #a0a0a0;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --border-radius: 12px;
+            --font-family: 'Poppins', sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* --- MAIN GAME CONTAINER --- */
+        .game-container {
+            width: 100%;
+            max-width: 500px;
+            background-color: var(--card-color);
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* --- HEADER & LOGO --- */
+        .header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin-bottom: 15px;
+            border: 2px solid var(--primary-accent);
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text-color);
+        }
+        
+        .header p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* --- GAME AREA --- */
+        .game-area {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9; /* Maintain aspect ratio for canvas */
+            margin-bottom: 25px;
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: var(--border-radius);
+            overflow: hidden; /* Ensure graph doesn't overflow */
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        #gameCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: transparent;
+        }
+
+        .multiplier-display {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 4rem;
+            font-weight: 700;
+            color: var(--warning-color); /* Default to warning */
+            text-shadow: 0 0 15px rgba(255, 193, 7, 0.3);
+            transition: color 0.2s ease-out;
+            z-index: 2;
+        }
+        
+        .multiplier-display.bust {
+            color: var(--danger-color);
+            text-shadow: 0 0 20px rgba(220, 53, 69, 0.6);
+        }
+
+        .multiplier-display.won {
+            color: var(--success-color);
+            text-shadow: 0 0 20px rgba(40, 167, 69, 0.6);
+        }
+
+        /* --- CONTROLS --- */
+        .controls {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            border: none;
+            border-radius: 8px;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            max-width: 250px;
+            font-family: var(--font-family);
+            box-shadow: 0 4px 15px -5px rgba(0,0,0,0.3);
+        }
+
+        .btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+        
+        .btn-start {
+            background-color: var(--primary-accent);
+            color: white;
+            box-shadow: 0 4px 15px -5px var(--primary-accent);
+        }
+        
+        .btn-cashout {
+            background-color: var(--success-color);
+            color: white;
+            box-shadow: 0 4px 15px -5px var(--success-color);
+        }
+        
+        .btn-play-again {
+            background-color: var(--primary-accent);
+            color: white;
+            box-shadow: 0 4px 15px -5px var(--primary-accent);
+        }
+
+        .btn:hover:not(:disabled) { transform: translateY(-3px); }
+
+        /* --- OVERLAYS --- */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(18, 18, 18, 0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+            z-index: 10;
+        }
+
+        .overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .overlay h2 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .overlay p {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 25px;
+        }
+        
+        #result-title.bust { color: var(--danger-color); }
+        #result-title.won { color: var(--success-color); }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        
+        <div class="header">
+            <img src="logo.jpeg" alt="STEPZ DEBATES Logo" class="logo">
+            <h1>Crash Game</h1>
+            <p>Cash out before it busts!</p>
+        </div>
+
+        <div class="game-area">
+            <canvas id="gameCanvas"></canvas>
+            <div class="multiplier-display" id="multiplier-display">1.00x</div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn btn-start" id="main-action-btn">Start Game</button>
+        </div>
+
+        <div class="overlay active" id="start-overlay">
+            <h2>Get Ready!</h2>
+            <p>Click "Start Game" to begin. Cash out before the graph crashes!</p>
+            <button class="btn btn-start" id="overlay-start-btn">Start Game</button>
+        </div>
+
+        <div class="overlay" id="result-overlay">
+            <h2 id="result-title"></h2>
+            <p id="result-message"></p>
+            <button class="btn btn-play-again" id="play-again-btn">Play Again</button>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Elements ---
+            const gameCanvas = document.getElementById('gameCanvas');
+            const ctx = gameCanvas.getContext('2d');
+            const multiplierDisplay = document.getElementById('multiplier-display');
+            const mainActionBtn = document.getElementById('main-action-btn');
+            const startOverlay = document.getElementById('start-overlay');
+            const overlayStartBtn = document.getElementById('overlay-start-btn');
+            const resultOverlay = document.getElementById('result-overlay');
+            const resultTitle = document.getElementById('result-title');
+            const resultMessage = document.getElementById('result-message');
+            const playAgainBtn = document.getElementById('play-again-btn');
+
+            // --- Game Variables ---
+            let currentMultiplier = 1.00;
+            let crashPoint = 0; // The hidden point where the game crashes
+            let isGameRunning = false;
+            let animationFrameId;
+            let lastUpdateTime = 0;
+            const updateInterval = 1000 / 60; // 60 FPS
+            
+            // Graph points
+            const graphPoints = [];
+            const maxGraphPoints = 100; // Max points visible on screen
+            const BASE_SPEED = 0.005; // Base increment speed
+            const SPEED_VARIANCE = 0.003; // Random variance in speed
+            const EXPONENTIAL_FACTOR = 0.0005; // How quickly speed scales with multiplier
+
+            // --- Canvas Setup ---
+            function resizeCanvas() {
+                gameCanvas.width = gameCanvas.offsetWidth;
+                gameCanvas.height = gameCanvas.offsetHeight;
+                drawGraph(); // Redraw if resized
+            }
+            window.addEventListener('resize', resizeCanvas);
+            resizeCanvas(); // Initial resize
+
+            // --- Utility Functions ---
+
+            function generateCrashPoint() {
+                const e = 2 ** 32;
+                const h = Math.random();
+                const crash = Math.floor((100 * e - h * e) / (100 - h * 100));
+                return Math.max(1, crash / 100);
+            }
+
+            // --- Game Loop ---
+            function gameLoop(currentTime) {
+                if (!isGameRunning) return;
+
+                if (currentTime - lastUpdateTime > updateInterval) {
+                    lastUpdateTime = currentTime;
+
+                    const elapsedTime = (currentTime - startTime) / 1000; // Time in seconds
+                    currentMultiplier = Math.pow(1.06, elapsedTime) * 1; // Exponential growth
+                    
+                    // Check for crash
+                    if (currentMultiplier >= crashPoint) {
+                        currentMultiplier = crashPoint; // Cap at crash point
+                        displayResult('bust');
+                        return; // Stop game loop
+                    }
+
+                    // Update UI and graph
+                    multiplierDisplay.textContent = currentMultiplier.toFixed(2) + 'x';
+                    updateGraph();
+                }
+
+                animationFrameId = requestAnimationFrame(gameLoop);
+            }
+
+            // --- Graph Drawing ---
+            function drawGraph() {
+                ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
+
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+                ctx.lineWidth = 1;
+                const gridSize = gameCanvas.height / 5;
+                for (let i = 0; i <= 5; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, i * gridSize);
+                    ctx.lineTo(gameCanvas.width, i * gridSize);
+                    ctx.stroke();
+                }
+                const verticalGridSize = gameCanvas.width / 5;
+                for (let i = 0; i <= 5; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(i * verticalGridSize, 0);
+                    ctx.lineTo(i * verticalGridSize, gameCanvas.height);
+                    ctx.stroke();
+                }
+
+                if (graphPoints.length < 2) return;
+
+                const maxY = Math.max(5, currentMultiplier + 1);
+                const scaleY = gameCanvas.height / maxY;
+
+                ctx.beginPath();
+                // THIS IS THE CORRECTED LINE:
+                ctx.strokeStyle = '#b328a4';
+                ctx.lineWidth = 3;
+                
+                ctx.moveTo(0, gameCanvas.height - (graphPoints[0].y * scaleY));
+
+                for (let i = 0; i < graphPoints.length; i++) {
+                    const x = (i / (maxGraphPoints - 1)) * gameCanvas.width;
+                    const y = gameCanvas.height - (graphPoints[i].y * scaleY);
+                    ctx.lineTo(x, y);
+                }
+                ctx.stroke();
+            }
+
+            function updateGraph() {
+                graphPoints.push({ x: graphPoints.length, y: currentMultiplier });
+                
+                if (graphPoints.length > maxGraphPoints) {
+                    graphPoints.shift();
+                }
+                drawGraph();
+            }
+
+            // --- Game State Control ---
+            function resetGame() {
+                cancelAnimationFrame(animationFrameId);
+                currentMultiplier = 1.00;
+                crashPoint = 0;
+                isGameRunning = false;
+                graphPoints.length = 0;
+
+                multiplierDisplay.textContent = '1.00x';
+                multiplierDisplay.classList.remove('bust', 'won');
+                mainActionBtn.textContent = 'Start Game';
+                mainActionBtn.classList.remove('btn-cashout', 'btn-play-again');
+                mainActionBtn.classList.add('btn-start');
+                mainActionBtn.disabled = false;
+                drawGraph();
+            }
+
+            function startGame() {
+                resetGame();
+                startOverlay.classList.remove('active');
+                resultOverlay.classList.remove('active');
+
+                crashPoint = generateCrashPoint();
+                isGameRunning = true;
+                startTime = performance.now();
+                mainActionBtn.textContent = 'Cash Out!';
+                mainActionBtn.classList.remove('btn-start');
+                mainActionBtn.classList.add('btn-cashout');
+                mainActionBtn.disabled = false;
+                
+                graphPoints.push({ x: 0, y: 1.00 });
+                drawGraph();
+                lastUpdateTime = performance.now();
+                animationFrameId = requestAnimationFrame(gameLoop);
+            }
+
+            function cashOut() {
+                if (!isGameRunning) return;
+                
+                cancelAnimationFrame(animationFrameId);
+                isGameRunning = false;
+                displayResult('won');
+            }
+
+            function displayResult(status) {
+                cancelAnimationFrame(animationFrameId);
+                isGameRunning = false;
+                mainActionBtn.disabled = true;
+
+                resultTitle.classList.remove('bust', 'won');
+                if (status === 'bust') {
+                    resultTitle.textContent = 'BUSTED!';
+                    resultTitle.classList.add('bust');
+                    resultMessage.innerHTML = `It crashed at <span style="color:var(--danger-color); font-weight:700;">${crashPoint.toFixed(2)}x</span>. Better luck next time!`;
+                    multiplierDisplay.classList.add('bust');
+                    multiplierDisplay.textContent = crashPoint.toFixed(2) + 'x';
+                } else if (status === 'won') {
+                    resultTitle.textContent = 'YOU WON!';
+                    resultTitle.classList.add('won');
+                    resultMessage.innerHTML = `You cashed out at <span style="color:var(--success-color); font-weight:700;">${currentMultiplier.toFixed(2)}x</span>!`;
+                    multiplierDisplay.classList.add('won');
+                }
+                
+                setTimeout(() => {
+                    resultOverlay.classList.add('active');
+                }, 1000);
+            }
+
+
+            // --- Event Listeners ---
+            mainActionBtn.addEventListener('click', () => {
+                if (!isGameRunning && (mainActionBtn.textContent === 'Start Game' || mainActionBtn.textContent === 'Play Again')) {
+                    startGame();
+                } else if (isGameRunning) {
+                    cashOut();
+                }
+            });
+
+            overlayStartBtn.addEventListener('click', startGame);
+            playAgainBtn.addEventListener('click', () => {
+                resultOverlay.classList.remove('active');
+                // Small delay to let the overlay fade out before starting a new game
+                setTimeout(startGame, 400); 
+            });
+
+            // Initial setup
+            resetGame();
+        });
+    </script>
+</body>
+</html>

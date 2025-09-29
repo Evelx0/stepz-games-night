@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Night - STEPZ DEBATES</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+        :root {
+            --background-color: #121212;
+            --card-color: #1e1e1e;
+            --primary-accent: #b328a4;
+            --text-color: #ffffff;
+            --text-muted: #a0a0a0;
+            --border-radius: 12px;
+            --font-family: 'Poppins', sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background-color: var(--card-color);
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        .logo {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            margin-bottom: 15px;
+            border: 2px solid var(--primary-accent);
+        }
+        .header h1 {
+            font-size: 2.2rem;
+            font-weight: 700;
+        }
+        .header p {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-top: 5px;
+        }
+        .game-list {
+            display: grid;
+            gap: 20px;
+        }
+        .game-link {
+            display: block;
+            padding: 20px;
+            background-color: #2a2a2a;
+            border-radius: var(--border-radius);
+            text-decoration: none;
+            color: var(--text-color);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .game-link:hover {
+            transform: translateY(-5px);
+            background-color: #333;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+        }
+        .game-link h2 {
+            font-size: 1.5rem;
+            color: var(--primary-accent);
+            margin-bottom: 5px;
+        }
+        .game-link p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <img src="logo.jpeg" alt="STEPZ DEBATES Logo" class="logo">
+            <h1>Game Night</h1>
+            <p>Select a game to begin</p>
+        </header>
+
+        <div class="game-list">
+            <a href="higher-or-lower.html" class="game-link">
+                <h2>Higher or Lower</h2>
+                <p>Guess if the next number is higher or lower than the current one.</p>
+            </a>
+            <a href="blackjack.html" class="game-link">
+                <h2>Blackjack</h2>
+                <p>Get closer to 21 than the competitive dealer without going bust!</p>
+            </a>
+            <a href="bust.html" class="game-link">
+                <h2>Crash Game</h2>
+                <p>Cash out and take the multiplier before the graph crashes.</p>
+            </a>
+            <a href="price-it.html" class="game-link">
+                <h2>Price It!</h2>
+                <p>The closest guess to the real price without going over wins.</p>
+            </a>
+            <a href="deal.html" class="game-link">
+                <h2>The Briefcase Game</h2>
+                <p>Accept the Banker's offer or risk it all for what's in your case.</p>
+            </a>
+        </div>
+    </div>
+</body>
+</html>

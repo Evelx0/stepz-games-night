@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Price It! - STEPZ DEBATES</title>
+    <style>
+        /* --- FONT IMPORT --- */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+
+        /* --- GLOBAL STYLES & VARIABLES --- */
+        :root {
+            --background-color: #121212;
+            --card-color: #1e1e1e;
+            --primary-accent: #b328a4;
+            --text-color: #ffffff;
+            --text-muted: #a0a0a0;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --border-radius: 12px;
+            --font-family: 'Poppins', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* --- MAIN GAME CONTAINER --- */
+        .game-container {
+            width: 100%;
+            max-width: 600px;
+            background-color: var(--card-color);
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* --- HEADER & LOGO --- */
+        .header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        .logo {
+            width: 80px; height: 80px;
+            border-radius: 50%;
+            margin-bottom: 15px;
+            border: 2px solid var(--primary-accent);
+        }
+        .header h1 { font-size: 1.8rem; font-weight: 700; }
+        .header p { font-size: 0.9rem; color: var(--text-muted); }
+        
+        /* --- PRODUCT DISPLAY --- */
+        .product-display {
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+        }
+        #product-image {
+            max-width: 100%;
+            height: 250px;
+            object-fit: contain;
+            margin-bottom: 15px;
+			margin: 0 auto;
+        }
+        #product-name {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        
+        /* --- PRICE REVEAL --- */
+        .price-reveal {
+            background-color: var(--success-color);
+            color: white;
+            padding: 15px;
+            border-radius: var(--border-radius);
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            display: none; /* Hidden by default */
+            animation: fadeIn 0.5s ease;
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+        
+        /* --- GUESSING AREA --- */
+        .guess-area {
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border-radius: var(--border-radius);
+            margin-bottom: 25px;
+        }
+        .guess-area h3 { margin-bottom: 15px; color: var(--text-muted); }
+        
+        #guess-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        .input-group { flex: 1; min-width: 120px; }
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background-color: #2a2a2a;
+            color: white;
+            font-family: var(--font-family);
+            font-size: 1rem;
+        }
+        #submit-guess-btn {
+            padding: 12px 20px;
+            border: none;
+            background-color: var(--primary-accent);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        #submit-guess-btn:hover { background-color: #9d2392; }
+
+        #guess-list {
+            list-style: none;
+            text-align: left;
+            font-size: 1.1rem;
+        }
+        #guess-list li {
+            background-color: #2c2c2c;
+            padding: 10px 15px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+            border-left: 4px solid var(--text-muted);
+        }
+        #guess-list li.winner {
+            background-color: #28a74520;
+            border-left: 4px solid var(--success-color);
+            transform: scale(1.05);
+            font-weight: 700;
+        }
+        #winner-announcement {
+            margin-top: 15px;
+            font-weight: 600;
+            color: var(--success-color);
+            min-height: 24px;
+        }
+
+        /* --- CONTROLS --- */
+        .controls { display: flex; justify-content: center; }
+        .btn {
+            border: none;
+            border-radius: 8px;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            width: 100%;
+            max-width: 250px;
+            color: white;
+        }
+        .btn-reveal { background-color: var(--success-color); }
+        .btn-next { background-color: var(--primary-accent); }
+        .btn:disabled { cursor: not-allowed; opacity: 0.5; }
+
+        /* --- OVERLAY --- */
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(18, 18, 18, 0.95);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden; transition: opacity 0.4s ease;
+            z-index: 10;
+        }
+        .overlay.active { opacity: 1; visibility: visible; }
+        .overlay h2 { font-size: 2.5rem; margin-bottom: 10px; }
+        .overlay p { font-size: 1.1rem; color: var(--text-muted); margin-bottom: 25px; }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <div class="header">
+            <img src="logo.jpeg" alt="STEPZ DEBATES Logo" class="logo">
+            <h1>Price It!</h1>
+            <p>Closest guess without going over wins!</p>
+        </div>
+
+        <div class="product-display">
+            <img src="" alt="Product Image" id="product-image" style="display: none;">
+            <h2 id="product-name">Loading Next Item...</h2>
+        </div>
+
+        <div class="price-reveal" id="price-reveal"></div>
+        
+        <div class="guess-area">
+            <h3>Enter Your Guesses</h3>
+            <form id="guess-form">
+                <div class="input-group">
+                    <input type="text" id="player-name-input" placeholder="Your Name" required>
+                </div>
+                <div class="input-group">
+                    <input type="number" id="guess-input" placeholder="Price (£)" step="0.01" min="0" required>
+                </div>
+                <button type="submit" id="submit-guess-btn">Lock In</button>
+            </form>
+            <ul id="guess-list"></ul>
+            <p id="winner-announcement"></p>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-reveal" id="reveal-btn" disabled>Reveal Price</button>
+            <button class="btn btn-next" id="next-item-btn" style="display: none;">Next Item</button>
+        </div>
+
+        <div class="overlay active" id="start-overlay">
+            <h2>Welcome to Price It!</h2>
+            <p>Guess the price of the item shown. The person closest to the actual price—without going over—wins the round!</p>
+            <button class="btn btn-next" id="start-btn">Start Game</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- PRODUCT DATABASE ---
+            // Easily add or change products here. Use direct URLs for images.
+            const products = [
+                {
+                    name: 'Nike Air Force 1 \'07',
+                    price: 119.99,
+                    imageUrl: 'https://media.karousell.com/media/photos/products/2023/1/22/nike_air_force_1_07_all_white_1674390731_e4ea475a_progressive.jpg'
+                },
+                {
+                    name: 'Sony PlayStation 5 DualSense Controller',
+                    price: 64.99,
+                    imageUrl: 'https://media.direct.playstation.com/is/image/sierialto/dualsense-ps5-controller-starlight-blue-accessory-front'
+                },
+                {
+                    name: 'Large Big Mac Meal',
+                    price: 7.89,
+                    imageUrl: 'https://scene7-produse.gmal.ro/media/mc/product/produs-imagine-2019-12-16-10-33-31-000000.png'
+                },
+                {
+                    name: 'Apple AirPods Pro (2nd Generation)',
+                    price: 229.00,
+                    imageUrl: 'https://store.storeimages.cdn-apple.com/4668/as-images.apple.com/is/MQD83_AV2?wid=572&hei=572&fmt=jpeg&qlt=95&.v=1660803980313'
+                },
+                {
+                    name: 'Oreo Original Sandwich Biscuits (154g)',
+                    price: 1.25,
+                    imageUrl: 'https://assets.sainsburys-groceries.co.uk/gol/7740411/1/640x640.jpg'
+                }
+            ];
+            let currentProduct = null;
+            let lastProductIndex = -1;
+            let guesses = [];
+
+            // --- DOM ELEMENTS ---
+            const productName = document.getElementById('product-name');
+            const productImage = document.getElementById('product-image');
+            const priceReveal = document.getElementById('price-reveal');
+            const guessForm = document.getElementById('guess-form');
+            const playerNameInput = document.getElementById('player-name-input');
+            const guessInput = document.getElementById('guess-input');
+            const guessList = document.getElementById('guess-list');
+            const winnerAnnouncement = document.getElementById('winner-announcement');
+            const revealBtn = document.getElementById('reveal-btn');
+            const nextItemBtn = document.getElementById('next-item-btn');
+            const startOverlay = document.getElementById('start-overlay');
+            const startBtn = document.getElementById('start-btn');
+
+            // --- GAME LOGIC ---
+            function setupNewRound() {
+                guesses = [];
+                guessList.innerHTML = '';
+                winnerAnnouncement.textContent = '';
+                priceReveal.style.display = 'none';
+                
+                guessForm.style.display = 'flex';
+                revealBtn.style.display = 'block';
+                revealBtn.disabled = true;
+                nextItemBtn.style.display = 'none';
+
+                // Pick a new random product (that wasn't the last one)
+                let productIndex;
+                do {
+                    productIndex = Math.floor(Math.random() * products.length);
+                } while (products.length > 1 && productIndex === lastProductIndex);
+                lastProductIndex = productIndex;
+                currentProduct = products[productIndex];
+                
+                productName.textContent = currentProduct.name;
+                productImage.src = currentProduct.imageUrl;
+                productImage.style.display = 'block';
+            }
+
+            function handleGuessSubmit(event) {
+                event.preventDefault();
+                const playerName = playerNameInput.value.trim();
+                const guessValue = parseFloat(guessInput.value);
+
+                if (playerName && !isNaN(guessValue) && guessValue >= 0) {
+                    guesses.push({ name: playerName, guess: guessValue });
+                    renderGuesses();
+                    playerNameInput.value = ''; // Optional: clear name for next player
+                    guessInput.value = '';
+                    playerNameInput.focus();
+                    revealBtn.disabled = false;
+                }
+            }
+            
+            function renderGuesses() {
+                guessList.innerHTML = '';
+                guesses.forEach(g => {
+                    const li = document.createElement('li');
+                    li.textContent = `${g.name}: £${g.guess.toFixed(2)}`;
+                    guessList.appendChild(li);
+                });
+            }
+
+            function revealPrice() {
+                guessForm.style.display = 'none';
+                revealBtn.style.display = 'none';
+                nextItemBtn.style.display = 'block';
+                
+                priceReveal.textContent = `Actual Price: £${currentProduct.price.toFixed(2)}`;
+                priceReveal.style.display = 'block';
+
+                determineWinner();
+            }
+
+            function determineWinner() {
+                const validGuesses = guesses.filter(g => g.guess <= currentProduct.price);
+
+                if (validGuesses.length === 0) {
+                    winnerAnnouncement.textContent = "Everyone went over! No winner this round.";
+                    winnerAnnouncement.style.color = 'var(--danger-color)';
+                    return;
+                }
+                
+                validGuesses.sort((a, b) => (currentProduct.price - a.guess) - (currentProduct.price - b.guess));
+                const winner = validGuesses[0];
+                
+                winnerAnnouncement.textContent = `🎉 ${winner.name} wins with the closest guess! 🎉`;
+                winnerAnnouncement.style.color = 'var(--success-color)';
+
+                // Highlight winner in the list
+                const listItems = guessList.getElementsByTagName('li');
+                for (let li of listItems) {
+                    if (li.textContent.startsWith(winner.name)) {
+                        li.classList.add('winner');
+                    }
+                }
+            }
+            
+            // --- EVENT LISTENERS ---
+            startBtn.addEventListener('click', () => {
+                startOverlay.classList.remove('active');
+                setupNewRound();
+            });
+
+            guessForm.addEventListener('submit', handleGuessSubmit);
+            revealBtn.addEventListener('click', revealPrice);
+            nextItemBtn.addEventListener('click', setupNewRound);
+        });
+    </script>
+</body>
+</html>

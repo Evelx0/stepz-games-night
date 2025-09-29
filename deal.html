@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Briefcase Game - STEPZ DEBATES</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+        :root {
+            --background-color: #121212;
+            --card-color: #1e1e1e;
+            --primary-accent: #b328a4;
+            --text-color: #ffffff;
+            --text-muted: #a0a0a0;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --border-radius: 12px;
+            --font-family: 'Poppins', sans-serif;
+            --low-value-color: #3a86ff;
+            --high-value-color: #ff0054;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .game-container {
+            width: 100%;
+            max-width: 900px;
+            background-color: var(--card-color);
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .logo { width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--primary-accent); }
+        .header h1 { font-size: 1.5rem; margin-top: 5px; }
+
+        .game-board {
+            display: grid;
+            grid-template-columns: 1fr 3fr;
+            gap: 20px;
+        }
+
+        .values-board ul { list-style: none; padding: 0; }
+        .values-board li {
+            padding: 5px 10px;
+            margin-bottom: 5px;
+            border-radius: 4px;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        .values-board li.low { background-color: #3a86ff20; border: 1px solid #3a86ff80; color: #a3c7ff; }
+        .values-board li.high { background-color: #ff005420; border: 1px solid #ff005480; color: #ff99b9; }
+        .values-board li.eliminated {
+            opacity: 0.2;
+            text-decoration: line-through;
+            transform: scale(0.95);
+        }
+
+        .main-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .game-status {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--primary-accent);
+            margin-bottom: 15px;
+            min-height: 30px;
+        }
+        
+        .briefcase-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+            gap: 10px;
+            width: 100%;
+        }
+
+        .briefcase {
+            aspect-ratio: 4 / 3;
+            background: linear-gradient(145deg, #444, #222);
+            border: 2px solid #666;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        .briefcase:hover { transform: scale(1.05); border-color: var(--primary-accent); }
+        .briefcase.chosen { display: none; }
+        .briefcase.opened {
+            cursor: default;
+            background: var(--background-color);
+            transform: scale(0.95);
+        }
+        .briefcase-value { font-size: 1.2rem; color: var(--text-color); }
+
+        .player-box-area {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .player-box-area h3 { color: var(--text-muted); }
+        .player-box-area .briefcase {
+            width: 120px;
+            margin: 10px auto;
+            cursor: default;
+            border-color: var(--primary-accent);
+        }
+
+        /* Overlays */
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(18, 18, 18, 0.98);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden; transition: opacity 0.4s ease;
+            z-index: 10;
+            text-align: center;
+            padding: 20px;
+        }
+        .overlay.active { opacity: 1; visibility: visible; }
+        .overlay h2 { font-size: 2.5rem; margin-bottom: 10px; }
+        .overlay p { font-size: 1.1rem; color: var(--text-muted); margin-bottom: 25px; }
+
+        .banker-offer h2 { color: var(--success-color); }
+        .banker-offer .offer-amount {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--success-color);
+            margin-bottom: 25px;
+        }
+        .decision-buttons { display: flex; gap: 20px; }
+        .btn {
+            border: none; border-radius: 8px; padding: 15px 30px;
+            font-size: 1.2rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; color: white;
+        }
+        .btn-deal { background-color: var(--success-color); }
+        .btn-no-deal { background-color: var(--danger-color); }
+        .btn-restart { background-color: var(--primary-accent); }
+
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <header class="header">
+            <img src="logo.jpeg" alt="Logo" class="logo">
+            <h1>The Briefcase Game</h1>
+        </header>
+
+        <div class="game-board">
+            <div class="values-board" id="values-low"><ul></ul></div>
+            <div class="main-content">
+                <div class="game-status" id="game-status"></div>
+                <div class="briefcase-grid" id="briefcase-grid"></div>
+                <div class="player-box-area" id="player-box-area" style="display: none;">
+                    <h3>Your Briefcase</h3>
+                    <div class="briefcase" id="player-box"></div>
+                </div>
+            </div>
+            <div class="values-board" id="values-high"><ul></ul></div>
+        </div>
+
+        <div class="overlay active" id="start-overlay">
+            <h2>Deal or No Deal?</h2>
+            <p>Pick a briefcase. Open others to reveal their values. The Banker will make you an offer. Will you take the deal?</p>
+            <button class="btn btn-restart" id="start-btn">Start Game</button>
+        </div>
+        <div class="overlay banker-offer" id="banker-overlay">
+            <h2>Banker's Offer...</h2>
+            <p class="offer-amount" id="offer-amount"></p>
+            <div class="decision-buttons">
+                <button class="btn btn-deal" id="deal-btn">DEAL</button>
+                <button class="btn btn-no-deal" id="no-deal-btn">NO DEAL</button>
+            </div>
+        </div>
+        <div class="overlay game-over" id="game-over-overlay">
+            <h2 id="game-over-title"></h2>
+            <p id="game-over-message"></p>
+            <button class="btn btn-restart" id="restart-btn">Play Again</button>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- CONFIG & STATE ---
+    const VALUES = [0.01, 1, 5, 10, 25, 50, 75, 100, 200, 300, 400, 500, 750, 1000, 5000, 10000];
+    
+    // --- THIS IS THE CORRECTED LINE ---
+    const ROUNDS = [5, 4, 3, 2]; // Number of cases to open per round
+    const BRIEFCASE_COUNT = 16;
+    
+    let gameState = 'INIT';
+    let briefcases = [];
+    let playerBox = null;
+    let currentRound = 0;
+    let toOpenThisRound = 0;
+
+    // --- DOM ELEMENTS ---
+    const valuesLowContainer = document.querySelector('#values-low ul');
+    const valuesHighContainer = document.querySelector('#values-high ul');
+    const statusDisplay = document.getElementById('game-status');
+    const briefcaseGrid = document.getElementById('briefcase-grid');
+    const playerBoxArea = document.getElementById('player-box-area');
+    const playerBoxDisplay = document.getElementById('player-box');
+    
+    const startOverlay = document.getElementById('start-overlay');
+    const bankerOverlay = document.getElementById('banker-overlay');
+    const gameOverOverlay = document.getElementById('game-over-overlay');
+    const startBtn = document.getElementById('start-btn');
+    const restartBtn = document.getElementById('restart-btn');
+    const dealBtn = document.getElementById('deal-btn');
+    const noDealBtn = document.getElementById('no-deal-btn');
+
+    // --- UTILITY FUNCTIONS ---
+    const formatCurrency = (value) => `£${value.toLocaleString('en-UK', { minimumFractionDigits: 2 })}`;
+    const shuffleArray = (array) => array.sort(() => Math.random() - 0.5);
+
+    // --- RENDER FUNCTIONS ---
+    function renderValuesBoard() {
+        valuesLowContainer.innerHTML = '';
+        valuesHighContainer.innerHTML = '';
+        const sortedValues = [...VALUES].sort((a, b) => a - b);
+        
+        sortedValues.forEach(value => {
+            const li = document.createElement('li');
+            li.textContent = formatCurrency(value);
+            li.dataset.value = value;
+            
+            const isEliminated = briefcases.some(b => b.value === value && b.opened);
+            if (isEliminated) li.classList.add('eliminated');
+
+            if (value < 1000) {
+                li.classList.add('low');
+                valuesLowContainer.appendChild(li);
+            } else {
+                li.classList.add('high');
+                valuesHighContainer.appendChild(li);
+            }
+        });
+    }
+
+    function renderBriefcases() {
+        briefcaseGrid.innerHTML = '';
+        briefcases.forEach(box => {
+            const boxEl = document.createElement('div');
+            boxEl.classList.add('briefcase');
+            boxEl.dataset.id = box.id;
+            boxEl.textContent = box.id;
+            if (box.opened) {
+                boxEl.classList.add('opened');
+                boxEl.innerHTML = `<span class="briefcase-value">${formatCurrency(box.value)}</span>`;
+            }
+            if (playerBox && box.id === playerBox.id) {
+                boxEl.classList.add('chosen');
+            }
+            briefcaseGrid.appendChild(boxEl);
+        });
+    }
+
+    // --- GAME LOGIC ---
+    function initGame() {
+        startOverlay.classList.remove('active');
+        gameOverOverlay.classList.remove('active');
+        bankerOverlay.classList.remove('active');
+        playerBoxArea.style.display = 'none';
+
+        const shuffledValues = shuffleArray([...VALUES]);
+        briefcases = [];
+        for (let i = 1; i <= BRIEFCASE_COUNT; i++) {
+            briefcases.push({ id: i, value: shuffledValues[i - 1], opened: false });
+        }
+        
+        playerBox = null;
+        currentRound = 0;
+        
+        renderValuesBoard();
+        renderBriefcases();
+        
+        gameState = 'PICK_BOX';
+        updateStatus();
+    }
+
+    function updateStatus() {
+        switch (gameState) {
+            case 'PICK_BOX':
+                statusDisplay.textContent = 'Pick your briefcase.';
+                break;
+            case 'OPENING':
+                statusDisplay.textContent = `Open ${toOpenThisRound} briefcase${toOpenThisRound > 1 ? 's' : ''}.`;
+                break;
+            case 'DEAL_TIME':
+                statusDisplay.textContent = 'The Banker is calling...';
+                break;
+        }
+    }
+
+    function handleBriefcaseClick(id) {
+        const box = briefcases.find(b => b.id === id);
+        if (!box || box.opened) return;
+
+        if (gameState === 'PICK_BOX') {
+            playerBox = box;
+            playerBoxDisplay.textContent = playerBox.id;
+            playerBoxArea.style.display = 'block';
+            renderBriefcases(); // Re-render to hide the chosen box from the grid
+            startRound();
+        } else if (gameState === 'OPENING' && box.id !== playerBox.id) {
+            box.opened = true;
+            renderBriefcases();
+            renderValuesBoard();
+            toOpenThisRound--;
+            
+            if (toOpenThisRound === 0) {
+                gameState = 'DEAL_TIME';
+                updateStatus();
+                setTimeout(presentBankerOffer, 1500);
+            } else {
+                updateStatus();
+            }
+        }
+    }
+
+    function startRound() {
+        // This check ensures we don't start a new round if the game is over.
+        if (currentRound >= ROUNDS.length) {
+            endGame('final_choice');
+            return;
+        }
+        toOpenThisRound = ROUNDS[currentRound];
+        currentRound++;
+        gameState = 'OPENING';
+        updateStatus();
+    }
+
+    function calculateBankerOffer() {
+        const remainingValues = briefcases
+            .filter(b => !b.opened)
+            .map(b => b.value);
+        
+        const sum = remainingValues.reduce((acc, val) => acc + val, 0);
+        const average = sum / remainingValues.length;
+        
+        const offerPercentage = (currentRound / (ROUNDS.length + 1)) * 0.85;
+        return Math.round(average * offerPercentage);
+    }
+    
+    function presentBankerOffer() {
+        const remainingBriefcases = briefcases.filter(b => !b.opened);
+        if (remainingBriefcases.length === 2) {
+            endGame('final_choice');
+            return;
+        }
+
+        const offer = calculateBankerOffer();
+        document.getElementById('offer-amount').textContent = formatCurrency(offer);
+        bankerOverlay.classList.add('active');
+    }
+    
+    function handleDeal() {
+        bankerOverlay.classList.remove('active');
+        const offer = parseFloat(document.getElementById('offer-amount').textContent.replace(/[£,]/g, ''));
+        endGame('deal', offer);
+    }
+
+    function handleNoDeal() {
+        bankerOverlay.classList.remove('active');
+        startRound();
+    }
+
+    function endGame(type, amount = 0) {
+        let title = '';
+        let message = '';
+        if (type === 'deal') {
+            title = 'DEAL TAKEN!';
+            message = `You accepted the Banker's offer of ${formatCurrency(amount)}. Your briefcase contained ${formatCurrency(playerBox.value)}.`;
+        } else if (type === 'final_choice') {
+             const lastBox = briefcases.find(b => !b.opened && b.id !== playerBox.id);
+             title = 'FINAL REVEAL!';
+             message = `You rejected all offers and won what was in your briefcase: ${formatCurrency(playerBox.value)}. The last briefcase held ${formatCurrency(lastBox.value)}.`;
+        }
+        
+        document.getElementById('game-over-title').textContent = title;
+        document.getElementById('game-over-message').textContent = message;
+        gameOverOverlay.classList.add('active');
+    }
+
+    // --- EVENT LISTENERS ---
+    startBtn.addEventListener('click', initGame);
+    restartBtn.addEventListener('click', initGame);
+    briefcaseGrid.addEventListener('click', (e) => {
+        const boxEl = e.target.closest('.briefcase');
+        if (boxEl) handleBriefcaseClick(parseInt(boxEl.dataset.id));
+    });
+    dealBtn.addEventListener('click', handleDeal);
+    noDealBtn.addEventListener('click', handleNoDeal);
+});
+</script>
+</body>
+</html>
