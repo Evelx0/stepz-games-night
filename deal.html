@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>The Briefcase Game - STEPZ DEBATES</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
@@ -50,7 +50,7 @@
 
         .game-board {
             display: grid;
-            grid-template-columns: 1fr 3fr;
+            grid-template-columns: 1fr 3fr 1fr;
             gap: 20px;
         }
 
@@ -202,11 +202,15 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     // --- CONFIG & STATE ---
-    const VALUES = [0.01, 1, 5, 10, 25, 50, 75, 100, 200, 300, 400, 500, 750, 1000, 5000, 10000];
+    // max allowed win is £50 (16 values to match the original briefcase count)
+    const VALUES = [
+        0.01, 0.10, 0.50, 1, 2, 5, 7.5, 10,
+        12.5, 15, 20, 25, 30, 35, 40, 50
+    ];
     
-    // --- THIS IS THE CORRECTED LINE ---
     const ROUNDS = [5, 4, 3, 2]; // Number of cases to open per round
-    const BRIEFCASE_COUNT = 16;
+    const BRIEFCASE_COUNT = VALUES.length; // keep these in sync
+    const LOW_THRESHOLD = 50; // anything <= 50 goes to the left "low" column
     
     let gameState = 'INIT';
     let briefcases = [];
@@ -231,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const noDealBtn = document.getElementById('no-deal-btn');
 
     // --- UTILITY FUNCTIONS ---
-    const formatCurrency = (value) => `£${value.toLocaleString('en-UK', { minimumFractionDigits: 2 })}`;
+    const formatCurrency = (value) => `£${value.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     const shuffleArray = (array) => array.sort(() => Math.random() - 0.5);
 
     // --- RENDER FUNCTIONS ---
@@ -248,7 +252,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const isEliminated = briefcases.some(b => b.value === value && b.opened);
             if (isEliminated) li.classList.add('eliminated');
 
-            if (value < 1000) {
+            // Use LOW_THRESHOLD so the left column only shows values <= 50 (as requested)
+            if (value <= LOW_THRESHOLD) {
                 li.classList.add('low');
                 valuesLowContainer.appendChild(li);
             } else {
