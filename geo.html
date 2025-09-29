@@ -140,6 +140,7 @@
                     <div id="streetview"></div>
                 </div>
                 <div class="controls">
+                    <button class="btn btn-secondary" id="skip-btn" disabled>Skip Location</button>
                     <button class="btn btn-primary" id="guess-btn" disabled>Open Guessing Map</button>
                 </div>
             </div>
@@ -190,12 +191,13 @@ const locations = [
 let usedLocations = [], players = {}, roundGuesses = [], currentTargetLocation, currentRound;
 const TOTAL_ROUNDS = 5;
 
-let map, streetView, guessMarker, guessBtn, mapContainer, confirmGuessBtn, finishRoundBtn, startOverlay, startBtn, resultOverlay, nextRoundBtn, roundDisplay, playersList, playerAddForm, newPlayerNameInput, addedPlayersList, playerNameInput;
+let map, streetView, guessMarker, guessBtn, skipBtn, mapContainer, confirmGuessBtn, finishRoundBtn, startOverlay, startBtn, resultOverlay, nextRoundBtn, roundDisplay, playersList, playerAddForm, newPlayerNameInput, addedPlayersList, playerNameInput;
 
 // This function will be called by the Google Maps script once it's loaded
 function initializeGame() {
     // DOM bindings
     guessBtn = document.getElementById('guess-btn');
+    skipBtn = document.getElementById('skip-btn');
     mapContainer = document.getElementById('map-container');
     confirmGuessBtn = document.getElementById('confirm-guess-btn');
     finishRoundBtn = document.getElementById('finish-round-btn');
@@ -214,6 +216,7 @@ function initializeGame() {
     playerAddForm.addEventListener('submit', addPlayer);
     startBtn.addEventListener('click', startGame);
     guessBtn.addEventListener('click', openMap);
+    skipBtn.addEventListener('click', handleSkip);
     confirmGuessBtn.addEventListener('click', lockInGuess);
     finishRoundBtn.addEventListener('click', finishRound);
     nextRoundBtn.addEventListener('click', () => {
@@ -255,6 +258,7 @@ function loadNewRound() {
     currentRound++;
     roundGuesses = [];
     guessBtn.disabled = true;
+    skipBtn.disabled = true;
     updateGameInfo();
 
     let locationIndex;
@@ -276,11 +280,13 @@ function loadNewRound() {
         }
     );
     guessBtn.disabled = false;
+    skipBtn.disabled = false;
 }
 
 function openMap() {
     mapContainer.classList.add('active');
     confirmGuessBtn.disabled = true;
+    skipBtn.disabled = true;
     playerNameInput.value = '';
     if (guessMarker) guessMarker.setMap(null);
     map = new google.maps.Map(document.getElementById('map'), {
@@ -288,6 +294,14 @@ function openMap() {
         streetViewControl: false, mapTypeControl: false
     });
     map.addListener('click', (e) => placeMarker(e.latLng));
+}
+
+function handleSkip() {
+    if (currentRound >= TOTAL_ROUNDS) {
+        finishRound();
+    } else {
+        loadNewRound();
+    }
 }
 
 function placeMarker(position) {
@@ -315,8 +329,8 @@ function lockInGuess() {
 }
 
 function finishRound() {
-    if (roundGuesses.length === 0) { alert("At least one guess must be made!"); return; }
     mapContainer.classList.remove('active');
+    skipBtn.disabled = true;
     showResult();
 }
 
@@ -328,18 +342,34 @@ function showResult() {
         players[g.name] += score;
         return { name: g.name, distance, score, guess: g.guess };
     });
+    // Add players who didn't guess this round
+    for (const name in players) {
+        if (!results.some(r => r.name === name)) {
+            results.push({ name, distance: Infinity, score: 0, guess: null });
+        }
+    }
+    
     results.sort((a, b) => a.distance - b.distance);
 
     updatePlayersPanel();
-
-    document.getElementById('result-title').textContent = `Round ${currentRound} Results!`;
-    document.getElementById('result-message').textContent = `${results[0].name} was the closest!`;
+    
+    const resultTitleEl = document.getElementById('result-title');
+    const resultMessageEl = document.getElementById('result-message');
+    
+    if (roundGuesses.length > 0) {
+        resultTitleEl.textContent = `Round ${currentRound} Results!`;
+        resultMessageEl.textContent = `${results[0].name} was the closest!`;
+    } else {
+        resultTitleEl.textContent = `Round ${currentRound} Skipped!`;
+        resultMessageEl.textContent = 'No guesses were made.';
+    }
     
     const resultList = document.getElementById('result-list');
     resultList.innerHTML = '';
     results.forEach((r, index) => {
         const li = document.createElement('li');
-        li.innerHTML = `<span>${index + 1}. ${r.name}</span> <span>+${r.score} pts (${(r.distance/1000).toFixed(1)}km)</span>`;
+        const distanceText = r.distance === Infinity ? 'N/A' : `${(r.distance/1000).toFixed(1)}km`;
+        li.innerHTML = `<span>${index + 1}. ${r.name}</span> <span>+${r.score} pts (${distanceText})</span>`;
         resultList.appendChild(li);
     });
 
@@ -347,21 +377,23 @@ function showResult() {
 
     const bounds = new google.maps.LatLngBounds();
     bounds.extend(target);
-    results.forEach(r => bounds.extend(r.guess));
+    results.forEach(r => {
+        if(r.guess) bounds.extend(r.guess);
+    });
     
     const resultMap = new google.maps.Map(document.getElementById('result-map'));
     resultMap.fitBounds(bounds);
 
     new google.maps.Marker({ position: target, map: resultMap, label: 'A', title: 'Actual Location' });
     results.forEach(r => {
-        new google.maps.Marker({ position: r.guess, map: resultMap, label: r.name[0] });
+        if(r.guess) new google.maps.Marker({ position: r.guess, map: resultMap, label: r.name[0] });
     });
 
     if (currentRound >= TOTAL_ROUNDS) {
         nextRoundBtn.textContent = 'Finish Game';
-        results.sort((a, b) => players[b.name] - players[a.name]);
-        document.getElementById('result-title').textContent = `Final Score: ${players[results[0].name]} points!`;
-        document.getElementById('result-message').textContent = `${results[0].name} is the winner!`;
+        const finalScores = Object.entries(players).sort(([,a],[,b]) => b-a);
+        resultTitleEl.textContent = `Final Score: ${finalScores[0][1]} points!`;
+        resultMessageEl.textContent = `${finalScores[0][0]} is the winner!`;
     } else {
         nextRoundBtn.textContent = 'Next Round';
     }
