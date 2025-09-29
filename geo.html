@@ -267,8 +267,12 @@ function loadNewRound() {
     streetView = new google.maps.StreetViewPanorama(
         document.getElementById('streetview'), {
             position: currentTargetLocation, pov: { heading: 165, pitch: 0 }, zoom: 1,
-            addressControl: false, linksControl: true, panControl: true, enableCloseButton: false,
-            zoomControl: false, fullscreenControl: false
+            addressControl: false, 
+            linksControl: true, // Allows street navigation
+            panControl: true, 
+            enableCloseButton: false,
+            zoomControl: false, // Disables zooming
+            fullscreenControl: false // Disables fullscreen button
         }
     );
     guessBtn.disabled = false;
