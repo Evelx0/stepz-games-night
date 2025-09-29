@@ -28,7 +28,7 @@
         }
         .container {
             width: 100%;
-            max-width: 600px;
+            max-width: 800px;
             background-color: var(--card-color);
             border-radius: var(--border-radius);
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
@@ -43,48 +43,53 @@
             margin-bottom: 30px;
         }
         .logo {
-            width: 90px;
-            height: 90px;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
-            margin-bottom: 15px;
-            border: 2px solid var(--primary-accent);
+            margin-bottom: 20px;
+            border: 3px solid var(--primary-accent);
         }
-        .header h1 {
-            font-size: 2.2rem;
+        h1 {
+            font-size: 2.5rem;
             font-weight: 700;
+            margin-bottom: 5px;
         }
         .header p {
-            font-size: 1rem;
+            font-size: 1.1rem;
             color: var(--text-muted);
-            margin-top: 5px;
         }
-        .game-list {
+        .game-grid {
             display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
+            margin-top: 20px;
         }
         .game-link {
-            display: block;
-            padding: 20px;
-            background-color: #2a2a2a;
+            background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: var(--border-radius);
+            padding: 25px;
             text-decoration: none;
             color: var(--text-color);
-            transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.2s ease-in-out;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
         .game-link:hover {
             transform: translateY(-5px);
-            background-color: #333;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+            border-color: var(--primary-accent);
+            box-shadow: 0 8px 25px rgba(179, 40, 164, 0.2);
         }
         .game-link h2 {
             font-size: 1.5rem;
             color: var(--primary-accent);
-            margin-bottom: 5px;
+            margin-bottom: 10px;
         }
         .game-link p {
             font-size: 0.9rem;
             color: var(--text-muted);
+            line-height: 1.5;
         }
     </style>
 </head>
@@ -92,14 +97,14 @@
     <div class="container">
         <header class="header">
             <img src="logo.jpeg" alt="STEPZ DEBATES Logo" class="logo">
-            <h1>Game Night</h1>
-            <p>Select a game to begin</p>
+            <h1>STEPZ DEBATES</h1>
+            <p>Game Night Collection</p>
         </header>
 
-        <div class="game-list">
-            <a href="higher-or-lower.html" class="game-link">
+        <div class="game-grid">
+            <a href="game.html" class="game-link">
                 <h2>Higher or Lower</h2>
-                <p>Guess if the next number is higher or lower than the current one.</p>
+                <p>Will the next number be higher or lower? A game of luck and intuition.</p>
             </a>
             <a href="blackjack.html" class="game-link">
                 <h2>Blackjack</h2>
@@ -107,17 +112,34 @@
             </a>
             <a href="bust.html" class="game-link">
                 <h2>Crash Game</h2>
-                <p>Cash out and take the multiplier before the graph crashes.</p>
+                <p>Cash out before the multiplier crashes. How long can you hold your nerve?</p>
             </a>
             <a href="price-it.html" class="game-link">
                 <h2>Price It!</h2>
-                <p>The closest guess to the real price without going over wins.</p>
+                <p>Guess the price of everyday items. Closest without going over wins!</p>
             </a>
             <a href="deal.html" class="game-link">
-                <h2>The Briefcase Game</h2>
-                <p>Accept the Banker's offer or risk it all for what's in your case.</p>
+                <h2>Briefcase Game</h2>
+                <p>Choose your case, eliminate others, and take on the Banker. Deal or No Deal?</p>
+            </a>
+            <a href="mines.html" class="game-link">
+                <h2>Mines</h2>
+                <p>Uncover gems and increase your multiplier, but be careful not to hit a mine!</p>
+            </a>
+             <a href="geo.html" class="game-link">
+                <h2>Geo Guesser</h2>
+                <p>Explore a random location and pinpoint your guess on the world map.</p>
+            </a>
+             <a href="word-ladder.html" class="game-link">
+                <h2>Word Ladder</h2>
+                <p>Change one letter at a time to transform one word into another.</p>
+            </a>
+             <a href="emoji-riddles.html" class="game-link">
+                <h2>Emoji Riddles</h2>
+                <p>Decipher the movie, song, or phrase from a sequence of emojis.</p>
             </a>
         </div>
     </div>
 </body>
 </html>
+
