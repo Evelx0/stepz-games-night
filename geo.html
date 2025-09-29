@@ -279,6 +279,20 @@ function loadNewRound() {
             fullscreenControl: false // Disables fullscreen button
         }
     );
+
+    // Add a check to ensure the location is navigable
+    const linksListener = streetView.addListener('links_changed', () => {
+        // Use a timeout to give the panorama a moment to stabilize
+        setTimeout(() => {
+            if (streetView.getLinks().length === 0) {
+                console.log("Stuck in a photo sphere, automatically skipping...");
+                handleSkip();
+            }
+            // Once checked, remove the listener to avoid re-triggering
+            google.maps.event.removeListener(linksListener);
+        }, 1500); // 1.5 second delay
+    });
+
     guessBtn.disabled = false;
     skipBtn.disabled = false;
 }
@@ -298,6 +312,7 @@ function openMap() {
 
 function handleSkip() {
     if (currentRound >= TOTAL_ROUNDS) {
+        // If it's the last round and they skip, just end the game.
         finishRound();
     } else {
         loadNewRound();
@@ -440,4 +455,3 @@ document.head.appendChild(script);
 </script>
 </body>
 </html>
-
