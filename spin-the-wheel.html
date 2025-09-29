@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spin The Wheel - STEPZ DEBATES</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+        :root {
+            --background-color: #121212;
+            --card-color: #1e1e1e;
+            --primary-accent: #b328a4;
+            --text-color: #ffffff;
+            --text-muted: #a0a0a0;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --border-radius: 12px;
+            --font-family: 'Poppins', sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .game-container {
+            width: 100%;
+            max-width: 800px;
+            background-color: var(--card-color);
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 30px;
+            align-items: flex-start;
+        }
+        .controls-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .header { text-align: center; }
+        .logo { width: 80px; height: 80px; border-radius: 50%; border: 2px solid var(--primary-accent); margin-bottom: 10px; }
+        .header h1 { font-size: 1.8rem; font-weight: 700; }
+        .header p { font-size: 0.9rem; color: var(--text-muted); }
+        
+        .mode-selector {
+            display: flex;
+            background-color: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            padding: 5px;
+        }
+        .mode-btn {
+            flex: 1;
+            padding: 8px;
+            background-color: transparent;
+            border: none;
+            color: var(--text-muted);
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+        .mode-btn.active {
+            background-color: var(--primary-accent);
+            color: white;
+        }
+
+        .entry-form { display: flex; gap: 10px; }
+        #name-input {
+            flex-grow: 1; padding: 10px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2);
+            background-color: #2a2a2a; color: white; font-size: 1rem;
+        }
+        #entry-count {
+            width: 60px; padding: 10px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2);
+            background-color: #2a2a2a; color: white; font-size: 1rem;
+        }
+        .btn {
+            border: none; border-radius: 8px; padding: 10px 20px;
+            font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease;
+            color: white; background-color: var(--primary-accent);
+        }
+        .btn:disabled { cursor: not-allowed; opacity: 0.5; }
+        
+        .entries-list {
+            background-color: rgba(0,0,0,0.2);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+        .entries-list h3 { color: var(--text-muted); margin-bottom: 10px; text-align: center; }
+        #names-list { list-style: none; }
+        #names-list li {
+            background-color: #2a2a2a; padding: 8px 12px; margin-bottom: 5px; border-radius: 4px;
+            display: flex; justify-content: space-between; align-items: center;
+            transition: all 0.3s ease;
+        }
+        #names-list li.eliminated {
+            text-decoration: line-through;
+            opacity: 0.5;
+        }
+        .entry-lives {
+            font-size: 0.8rem;
+            font-weight: bold;
+            color: var(--success-color);
+            margin-left: 10px;
+        }
+        .remove-btn { background: none; border: none; color: var(--danger-color); cursor: pointer; font-size: 1.2rem; }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        #shuffle-btn { background-color: #6c757d; }
+
+        .wheel-container {
+            flex: 1;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            aspect-ratio: 1 / 1;
+        }
+        #wheelCanvas {
+            width: 100%;
+            height: 100%;
+            transition: transform 5s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        .wheel-pointer {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-top: 30px solid var(--primary-accent);
+            z-index: 10;
+        }
+
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(18, 18, 18, 0.98);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden; transition: opacity 0.4s ease;
+            z-index: 20; text-align: center; padding: 20px;
+        }
+        .overlay.active { opacity: 1; visibility: visible; }
+        .overlay h2 { font-size: 3rem; margin-bottom: 10px; }
+        .overlay p { font-size: 1.5rem; color: var(--text-muted); margin-bottom: 25px; }
+        #winner-overlay h2 { color: var(--success-color); }
+        #eliminated-overlay h2 { color: var(--danger-color); }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="controls-panel">
+            <header class="header">
+                <img src="logo.jpeg" alt="Logo" class="logo">
+                <h1>Spin The Wheel</h1>
+                <p>Add names and spin to win!</p>
+            </header>
+
+            <div class="mode-selector">
+                <button class="mode-btn active" data-mode="classic">Classic</button>
+                <button class="mode-btn" data-mode="elimination">Elimination</button>
+            </div>
+
+            <form id="entry-form" class="entry-form">
+                <input type="text" id="name-input" placeholder="Enter a name" required>
+                <input type="number" id="entry-count" value="1" min="1" title="Number of entries or lives">
+                <button type="submit" class="btn">Add</button>
+            </form>
+            <div class="entries-list">
+                <h3>Entries</h3>
+                <ul id="names-list"></ul>
+            </div>
+            <div class="action-buttons">
+                <button class="btn" id="shuffle-btn" disabled>Shuffle</button>
+                <button class="btn" id="spin-btn" disabled>Spin!</button>
+            </div>
+        </div>
+        <div class="wheel-container">
+            <div class="wheel-pointer"></div>
+            <canvas id="wheelCanvas"></canvas>
+        </div>
+    </div>
+
+    <div class="overlay" id="winner-overlay">
+        <h2>Winner!</h2>
+        <p id="winner-name"></p>
+        <button class="btn" id="close-winner-btn">Close</button>
+    </div>
+    
+    <div class="overlay" id="eliminated-overlay">
+        <h2>Eliminated!</h2>
+        <p id="eliminated-name"></p>
+        <button class="btn" id="next-round-btn">Next Round</button>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- DOM ELEMENTS ---
+    const canvas = document.getElementById('wheelCanvas');
+    const ctx = canvas.getContext('2d');
+    const entryForm = document.getElementById('entry-form');
+    const nameInput = document.getElementById('name-input');
+    const entryCountInput = document.getElementById('entry-count');
+    const namesList = document.getElementById('names-list');
+    const spinBtn = document.getElementById('spin-btn');
+    const shuffleBtn = document.getElementById('shuffle-btn');
+    const modeSelector = document.querySelector('.mode-selector');
+    
+    const winnerOverlay = document.getElementById('winner-overlay');
+    const winnerNameDisplay = document.getElementById('winner-name');
+    const closeWinnerBtn = document.getElementById('close-winner-btn');
+    
+    const eliminatedOverlay = document.getElementById('eliminated-overlay');
+    const eliminatedNameDisplay = document.getElementById('eliminated-name');
+    const nextRoundBtn = document.getElementById('next-round-btn');
+
+    // --- GAME STATE ---
+    let players = {}; // { name: { lives: number } }
+    let wheelSegments = [];
+    let gameMode = 'classic';
+    let isEliminationRunning = false;
+    const colors = ["#4B0082", "#006400", "#483D8B", "#8B0000", "#008B8B", "#B8860B", "#9932CC", "#556B2F"];
+    let currentRotation = 0;
+    let isSpinning = false;
+
+    // --- CANVAS SETUP ---
+    function resizeCanvas() {
+        const size = canvas.parentElement.offsetWidth;
+        canvas.width = size;
+        canvas.height = size;
+        drawWheel();
+    }
+    window.addEventListener('resize', resizeCanvas);
+
+    // --- WHEEL DRAWING ---
+    function drawWheel() {
+        buildWheelSegments();
+        const numSegments = wheelSegments.length;
+        
+        if (numSegments === 0) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            return;
+        }
+        const anglePerSegment = (2 * Math.PI) / numSegments;
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const radius = canvas.width / 2 - 10;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.font = `bold ${Math.max(12, 18 - numSegments / 2)}px Poppins`;
+
+        wheelSegments.forEach((entry, i) => {
+            const startAngle = i * anglePerSegment;
+            const endAngle = startAngle + anglePerSegment;
+
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+            ctx.closePath();
+            ctx.fillStyle = colors[i % colors.length];
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            ctx.save();
+            ctx.fillStyle = '#fff';
+            ctx.translate(centerX, centerY);
+            ctx.rotate(startAngle + anglePerSegment / 2);
+            ctx.textAlign = 'right';
+            ctx.fillText(entry, radius - 15, 5);
+            ctx.restore();
+        });
+    }
+    
+    function buildWheelSegments() {
+        if (gameMode === 'classic') {
+            wheelSegments = [];
+            for (const name in players) {
+                for (let i = 0; i < players[name].lives; i++) {
+                    wheelSegments.push(name);
+                }
+            }
+        } else { // Elimination
+            wheelSegments = Object.keys(players).filter(name => players[name].lives > 0);
+        }
+    }
+
+    // --- ENTRY MANAGEMENT ---
+    function updateEntriesList() {
+        namesList.innerHTML = '';
+        const playerNames = Object.keys(players);
+        playerNames.forEach((name) => {
+            const li = document.createElement('li');
+            
+            const nameSpan = document.createElement('span');
+            nameSpan.textContent = name;
+            li.appendChild(nameSpan);
+
+            if (gameMode === 'elimination') {
+                const livesSpan = document.createElement('span');
+                livesSpan.className = 'entry-lives';
+                livesSpan.textContent = `x${players[name].lives}`;
+                nameSpan.appendChild(livesSpan);
+            }
+            
+            if (players[name].lives <= 0) {
+                li.classList.add('eliminated');
+            } else if (!isEliminationRunning) {
+                const removeBtn = document.createElement('button');
+                removeBtn.textContent = '×';
+                removeBtn.classList.add('remove-btn');
+                removeBtn.onclick = () => removeEntry(name);
+                li.appendChild(removeBtn);
+            }
+            namesList.appendChild(li);
+        });
+        const canSpin = playerNames.filter(name => players[name].lives > 0).length >= 2;
+        spinBtn.disabled = !canSpin || isSpinning;
+        shuffleBtn.disabled = !canSpin || isSpinning;
+        drawWheel();
+    }
+
+    function addEntry(e) {
+        e.preventDefault();
+        const name = nameInput.value.trim();
+        const count = parseInt(entryCountInput.value) || 1;
+        if (name) {
+            if (players[name]) {
+                players[name].lives += count;
+            } else {
+                players[name] = { lives: count };
+            }
+            nameInput.value = '';
+            entryCountInput.value = 1;
+            updateEntriesList();
+        }
+    }
+
+    function removeEntry(nameToRemove) {
+        delete players[nameToRemove];
+        updateEntriesList();
+    }
+    
+    function shuffleEntries() {
+        // To shuffle, we convert to array, shuffle, and convert back to object
+        let playerArray = Object.entries(players);
+        for (let i = playerArray.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [playerArray[i], playerArray[j]] = [playerArray[j], playerArray[i]];
+        }
+        players = Object.fromEntries(playerArray);
+        updateEntriesList();
+    }
+    
+    function setGameMode(mode) {
+        gameMode = mode;
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.mode === mode);
+        });
+        resetGame();
+    }
+
+    function resetGame() {
+        isEliminationRunning = false;
+        // Reset lives to initial state if players exist
+        for (const name in players) {
+            if (players[name].lives <= 0) players[name].lives = 1; // Revive eliminated players
+        }
+        spinBtn.textContent = "Spin!";
+        entryForm.style.display = 'flex';
+        updateEntriesList();
+    }
+
+    // --- PROVABLY FAIR & SPIN LOGIC ---
+    async function getWinningIndex(currentSegments) {
+        const clientSeed = Date.now().toString();
+        const gameString = currentSegments.join(',') + '-' + clientSeed;
+        const encoder = new TextEncoder();
+        const data = encoder.encode(gameString);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hexHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        const decimal = parseInt(hexHash.substring(0, 8), 16);
+        return decimal % currentSegments.length;
+    }
+
+    async function spinWheel() {
+        if (isSpinning) return;
+
+        if (gameMode === 'elimination' && !isEliminationRunning) {
+            isEliminationRunning = true;
+            entryForm.style.display = 'none'; // Lock entries
+            shuffleBtn.disabled = true;
+            document.querySelectorAll('.remove-btn').forEach(btn => btn.style.display = 'none');
+        }
+        
+        isSpinning = true;
+        spinBtn.disabled = true;
+        shuffleBtn.disabled = true;
+
+        buildWheelSegments(); // Ensure segments are up to date
+        const winningIndex = await getWinningIndex(wheelSegments);
+        
+        const anglePerSegment = 360 / wheelSegments.length;
+        const segmentCenter = (winningIndex * anglePerSegment) + (anglePerSegment / 2);
+        
+        const randomOffset = (Math.random() - 0.5) * anglePerSegment * 0.8;
+        const baseSpins = 5 * 360;
+        const finalRotation = baseSpins - segmentCenter + randomOffset;
+        
+        currentRotation += finalRotation;
+        canvas.style.transform = `rotate(${currentRotation}deg)`;
+        
+        setTimeout(() => {
+            handleSpinResult(winningIndex);
+        }, 5100);
+    }
+
+    function handleSpinResult(winningIndex) {
+        const winnerName = wheelSegments[winningIndex];
+
+        if (gameMode === 'classic') {
+            winnerNameDisplay.textContent = winnerName;
+            winnerOverlay.classList.add('active');
+            isSpinning = false;
+        } else { // Elimination mode
+            players[winnerName].lives--;
+            eliminatedNameDisplay.textContent = `${winnerName} lost a life! (${players[winnerName].lives} remaining)`;
+            eliminatedOverlay.classList.add('active');
+            updateEntriesList(); // Show eliminated player
+        }
+    }
+
+    // --- EVENT LISTENERS ---
+    entryForm.addEventListener('submit', addEntry);
+    spinBtn.addEventListener('click', spinWheel);
+    shuffleBtn.addEventListener('click', shuffleEntries);
+
+    modeSelector.addEventListener('click', (e) => {
+        if (e.target.classList.contains('mode-btn')) {
+            setGameMode(e.target.dataset.mode);
+        }
+    });
+
+    closeWinnerBtn.addEventListener('click', () => {
+        winnerOverlay.classList.remove('active');
+        if (isEliminationRunning) {
+            resetGame();
+        }
+        updateEntriesList();
+    });
+
+    nextRoundBtn.addEventListener('click', () => {
+        eliminatedOverlay.classList.remove('active');
+        isSpinning = false;
+        
+        const activePlayers = Object.keys(players).filter(name => players[name].lives > 0);
+        if (activePlayers.length > 1) {
+            drawWheel();
+            spinBtn.disabled = false;
+            shuffleBtn.disabled = false;
+        } else {
+            // Final winner
+            winnerNameDisplay.textContent = activePlayers[0];
+            winnerOverlay.classList.add('active');
+        }
+    });
+
+    // --- INITIALIZATION ---
+    resizeCanvas();
+});
+</script>
+</body>
+</html>
+
