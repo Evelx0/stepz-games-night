@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Geo Guesser - STEPZ DEBATES</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+        :root {
+            --background-color: #121212;
+            --card-color: #1e1e1e;
+            --primary-accent: #b328a4;
+            --text-color: #ffffff;
+            --text-muted: #a0a0a0;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --border-radius: 12px;
+            --font-family: 'Poppins', sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .game-container {
+            width: 100%;
+            max-width: 900px;
+            background-color: var(--card-color);
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .logo-title { display: flex; align-items: center; gap: 15px; }
+        .logo { width: 60px; height: 60px; border-radius: 50%; border: 2px solid var(--primary-accent); }
+        .header h1 { font-size: 1.8rem; font-weight: 700; text-align: left;}
+        
+        .game-info { text-align: right; font-size: 1.2rem; font-weight: 600; }
+        .game-info span { color: var(--primary-accent); }
+
+        .main-layout { display: flex; gap: 20px; }
+        .players-panel { flex: 1; background-color: rgba(0,0,0,0.2); border-radius: var(--border-radius); padding: 15px; }
+        .players-panel h3 { color: var(--text-muted); margin-bottom: 10px; }
+        #players-list { list-style: none; text-align: left; }
+        #players-list li { display: flex; justify-content: space-between; padding: 8px; border-radius: 4px; }
+        #players-list li:nth-child(odd) { background-color: rgba(255,255,255,0.05); }
+        #players-list .player-score { font-weight: 700; color: var(--primary-accent); }
+        
+        .game-content { flex: 3; }
+        #streetview-container {
+            width: 100%;
+            height: 450px;
+            background-color: #000;
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+            position: relative;
+        }
+        #streetview { width: 100%; height: 100%; border-radius: var(--border-radius); }
+        
+        .map-container {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.8); z-index: 20; padding: 20px;
+            flex-direction: column; justify-content: center; align-items: center;
+        }
+        .map-container.active { display: flex; }
+        #map { width: 100%; max-width: 90vw; height: 80vh; border-radius: var(--border-radius); }
+        .map-controls {
+            margin-top: 15px; display: flex; gap: 10px; align-items: center; background-color: var(--card-color);
+            padding: 10px; border-radius: var(--border-radius);
+        }
+        #player-name-input {
+            padding: 10px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2);
+            background-color: #2a2a2a; color: white; font-size: 1rem;
+        }
+        
+        .controls { display: flex; justify-content: center; gap: 15px; }
+        .btn {
+            border: none; border-radius: 8px; padding: 15px 30px;
+            font-size: 1.2rem; font-weight: 600; cursor: pointer;
+            transition: all 0.2s ease;
+            color: white;
+        }
+        .btn:disabled { cursor: not-allowed; opacity: 0.5; }
+        .btn-primary { background-color: var(--primary-accent); }
+        .btn-success { background-color: var(--success-color); }
+        .btn-secondary { background-color: #6c757d; }
+        
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(18, 18, 18, 0.98);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden; transition: opacity 0.4s ease;
+            z-index: 10; text-align: center; padding: 20px;
+        }
+        .overlay.active { opacity: 1; visibility: visible; }
+        .overlay h2 { font-size: 2.5rem; margin-bottom: 10px; }
+        .overlay p { font-size: 1.1rem; color: var(--text-muted); margin-bottom: 25px; }
+        #result-map { width: 100%; max-width: 400px; height: 300px; border-radius: var(--border-radius); margin-bottom: 20px;}
+        #result-list { list-style: none; text-align: left; margin-bottom: 20px; width: 100%; max-width: 400px; }
+        #result-list li { display: flex; justify-content: space-between; padding: 5px; border-radius: 4px; }
+        #result-list li:first-child { font-weight: bold; color: var(--success-color); }
+        
+        /* Player setup in start overlay */
+        #player-setup-area { width: 100%; max-width: 400px; }
+        #player-add-form { display: flex; gap: 10px; margin-bottom: 15px; }
+        #new-player-name { flex-grow: 1; padding: 10px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2); background-color: #2a2a2a; color: white; font-size: 1rem; }
+        #added-players-list { list-style: none; text-align: left; }
+        #added-players-list li { background-color: #2a2a2a; padding: 8px 12px; margin-bottom: 5px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <header class="header">
+            <div class="logo-title">
+                <img src="logo.jpeg" alt="Logo" class="logo">
+                <h1>Geo Guesser</h1>
+            </div>
+            <div class="game-info">
+                <div id="round-display">Round <span>- / -</span></div>
+            </div>
+        </header>
+
+        <div class="main-layout">
+            <div class="players-panel">
+                <h3>Scoreboard</h3>
+                <ul id="players-list"></ul>
+            </div>
+            <div class="game-content">
+                <div id="streetview-container">
+                    <div id="streetview"></div>
+                </div>
+                <div class="controls">
+                    <button class="btn btn-primary" id="guess-btn" disabled>Open Guessing Map</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="map-container" id="map-container">
+            <div id="map"></div>
+            <div class="map-controls">
+                <input type="text" id="player-name-input" placeholder="Enter your name">
+                <button class="btn btn-success" id="confirm-guess-btn" disabled>Lock In Guess</button>
+                <button class="btn btn-secondary" id="finish-round-btn">Finish & Reveal</button>
+            </div>
+        </div>
+
+        <div class="overlay active" id="start-overlay">
+            <h2>Welcome to Geo Guesser!</h2>
+            <div id="player-setup-area">
+                <p>Add 1 to 8 players to the panel.</p>
+                <form id="player-add-form">
+                    <input type="text" id="new-player-name" placeholder="Player Name" required>
+                    <button type="submit" class="btn btn-primary" style="width: auto; padding: 10px 15px;">Add</button>
+                </form>
+                <ul id="added-players-list"></ul>
+            </div>
+            <button class="btn btn-success" id="start-btn" disabled>Start Game</button>
+        </div>
+
+        <div class="overlay" id="result-overlay">
+            <h2 id="result-title"></h2>
+            <p id="result-message"></p>
+            <ol id="result-list"></ol>
+            <div id="result-map"></div>
+            <button class="btn btn-primary" id="next-round-btn">Next Round</button>
+        </div>
+    </div>
+
+<script>
+const API_KEY = "AIzaSyCUARYn2W9okgonVLRKW-PcrNMeJUDBMyE";
+
+// --- LOCATION DATABASE ---
+const locations = [
+    {lat: 51.5007, lng: -0.1246}, {lat: 40.6892, lng: -74.0445}, {lat: 48.8584, lng: 2.2945}, {lat: 35.6586, lng: 139.7454},
+    {lat: -33.8568, lng: 151.2153}, {lat: 53.4631, lng: -2.2913}, {lat: 34.1341, lng: -118.3215}, {lat: -22.9519, lng: -43.2105},
+    {lat: 30.3285, lng: 35.4444}, {lat: 27.1751, lng: 78.0421}, {lat: 41.8902, lng: 12.4922}, {lat: -13.1631, lng: -72.5450},
+    {lat: 37.9715, lng: 23.7257}, {lat: 55.7522, lng: 37.6156}, {lat: 6.4550, lng: 3.3841}, {lat: 1.3521, lng: 103.8198},
+    {lat: 64.1466, lng: -21.9426}, {lat: 19.4326, lng: -99.1332}, {lat: -34.6037, lng: -58.3816}, {lat: -41.2865, lng: 174.7762}
+];
+let usedLocations = [], players = {}, roundGuesses = [], currentTargetLocation, currentRound;
+const TOTAL_ROUNDS = 5;
+
+let map, streetView, guessMarker, guessBtn, mapContainer, confirmGuessBtn, finishRoundBtn, startOverlay, startBtn, resultOverlay, nextRoundBtn, roundDisplay, playersList, playerAddForm, newPlayerNameInput, addedPlayersList, playerNameInput;
+
+function initializeGame() {
+    // DOM bindings
+    guessBtn = document.getElementById('guess-btn');
+    mapContainer = document.getElementById('map-container');
+    confirmGuessBtn = document.getElementById('confirm-guess-btn');
+    finishRoundBtn = document.getElementById('finish-round-btn');
+    startOverlay = document.getElementById('start-overlay');
+    startBtn = document.getElementById('start-btn');
+    resultOverlay = document.getElementById('result-overlay');
+    nextRoundBtn = document.getElementById('next-round-btn');
+    roundDisplay = document.getElementById('round-display');
+    playersList = document.getElementById('players-list');
+    playerAddForm = document.getElementById('player-add-form');
+    newPlayerNameInput = document.getElementById('new-player-name');
+    addedPlayersList = document.getElementById('added-players-list');
+    playerNameInput = document.getElementById('player-name-input');
+
+    // Event listeners
+    playerAddForm.addEventListener('submit', addPlayer);
+    startBtn.addEventListener('click', startGame);
+    guessBtn.addEventListener('click', openMap);
+    confirmGuessBtn.addEventListener('click', lockInGuess);
+    finishRoundBtn.addEventListener('click', finishRound);
+    nextRoundBtn.addEventListener('click', () => {
+        resultOverlay.classList.remove('active');
+        if (currentRound >= TOTAL_ROUNDS) {
+            resetToLobby();
+        } else {
+            loadNewRound();
+        }
+    });
+}
+
+function addPlayer(e) {
+    e.preventDefault();
+    const name = newPlayerNameInput.value.trim();
+    if (name && Object.keys(players).length < 8 && !players[name]) {
+        players[name] = 0; // Add player with 0 score
+        const li = document.createElement('li');
+        li.textContent = name;
+        addedPlayersList.appendChild(li);
+        newPlayerNameInput.value = '';
+        startBtn.disabled = false;
+    }
+}
+
+function startGame() {
+    currentRound = 0;
+    usedLocations = [];
+    // Reset scores
+    for (const name in players) {
+        players[name] = 0;
+    }
+    startOverlay.classList.remove('active');
+    updatePlayersPanel();
+    loadNewRound();
+}
+
+function loadNewRound() {
+    currentRound++;
+    roundGuesses = [];
+    guessBtn.disabled = true;
+    updateGameInfo();
+
+    let locationIndex;
+    do {
+        locationIndex = Math.floor(Math.random() * locations.length);
+    } while (usedLocations.includes(locationIndex));
+    usedLocations.push(locationIndex);
+    currentTargetLocation = locations[locationIndex];
+
+    streetView = new google.maps.StreetViewPanorama(
+        document.getElementById('streetview'), {
+            position: currentTargetLocation, pov: { heading: 165, pitch: 0 }, zoom: 1,
+            addressControl: false, linksControl: true, panControl: true, enableCloseButton: false,
+            zoomControl: false, fullscreenControl: false
+        }
+    );
+    guessBtn.disabled = false;
+}
+
+function openMap() {
+    mapContainer.classList.add('active');
+    confirmGuessBtn.disabled = true;
+    playerNameInput.value = '';
+    if (guessMarker) guessMarker.setMap(null);
+    map = new google.maps.Map(document.getElementById('map'), {
+        center: { lat: 20, lng: 0 }, zoom: 2,
+        streetViewControl: false, mapTypeControl: false
+    });
+    map.addListener('click', (e) => placeMarker(e.latLng));
+}
+
+function placeMarker(position) {
+    if (guessMarker) {
+        guessMarker.setPosition(position);
+    } else {
+        guessMarker = new google.maps.Marker({ position: position, map: map });
+    }
+    confirmGuessBtn.disabled = false;
+}
+
+function lockInGuess() {
+    const playerName = playerNameInput.value.trim();
+    if (!playerName) { alert("Please enter a name."); return; }
+    if (!players.hasOwnProperty(playerName)) { alert("This player is not in the game. Check spelling."); return; }
+    if (roundGuesses.some(g => g.name === playerName)) { alert(`${playerName} has already guessed this round.`); return; }
+    
+    roundGuesses.push({ name: playerName, guess: guessMarker.getPosition() });
+    alert(`${playerName}'s guess locked in!`);
+    
+    playerNameInput.value = '';
+    guessMarker.setMap(null);
+    guessMarker = null;
+    confirmGuessBtn.disabled = true;
+}
+
+function finishRound() {
+    if (roundGuesses.length === 0) { alert("At least one guess must be made!"); return; }
+    mapContainer.classList.remove('active');
+    showResult();
+}
+
+function showResult() {
+    const target = new google.maps.LatLng(currentTargetLocation.lat, currentTargetLocation.lng);
+    const results = roundGuesses.map(g => {
+        const distance = google.maps.geometry.spherical.computeDistanceBetween(g.guess, target);
+        const score = calculateScore(distance);
+        players[g.name] += score;
+        return { name: g.name, distance, score, guess: g.guess };
+    });
+    results.sort((a, b) => a.distance - b.distance);
+
+    updatePlayersPanel();
+
+    document.getElementById('result-title').textContent = `Round ${currentRound} Results!`;
+    document.getElementById('result-message').textContent = `${results[0].name} was the closest!`;
+    
+    const resultList = document.getElementById('result-list');
+    resultList.innerHTML = '';
+    results.forEach((r, index) => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span>${index + 1}. ${r.name}</span> <span>+${r.score} pts (${(r.distance/1000).toFixed(1)}km)</span>`;
+        resultList.appendChild(li);
+    });
+
+    resultOverlay.classList.add('active');
+
+    const bounds = new google.maps.LatLngBounds();
+    bounds.extend(target);
+    results.forEach(r => bounds.extend(r.guess));
+    
+    const resultMap = new google.maps.Map(document.getElementById('result-map'));
+    resultMap.fitBounds(bounds);
+
+    new google.maps.Marker({ position: target, map: resultMap, label: 'A', title: 'Actual Location' });
+    results.forEach(r => {
+        new google.maps.Marker({ position: r.guess, map: resultMap, label: r.name[0] });
+    });
+
+    if (currentRound >= TOTAL_ROUNDS) {
+        nextRoundBtn.textContent = 'Finish Game';
+        results.sort((a, b) => players[b.name] - players[a.name]);
+        document.getElementById('result-title').textContent = `Final Score: ${players[results[0].name]} points!`;
+        document.getElementById('result-message').textContent = `${results[0].name} is the winner!`;
+    } else {
+        nextRoundBtn.textContent = 'Next Round';
+    }
+}
+
+function calculateScore(distanceMeters) {
+    if (distanceMeters < 250) return 5000;
+    const maxDistance = 5000 * 1000; // 5000 km for scoring range
+    if (distanceMeters > maxDistance) return 0;
+    return Math.round(5000 * (1 - (distanceMeters / maxDistance))**2); // Exponential falloff
+}
+
+function updatePlayersPanel() {
+    playersList.innerHTML = '';
+    // Sort players by score for the panel
+    const sortedPlayers = Object.entries(players).sort(([,a],[,b]) => b-a);
+    sortedPlayers.forEach(([name, score]) => {
+        const li = document.createElement('li');
+        li.innerHTML = `<span class="player-name">${name}</span> <span class="player-score">${score}</span>`;
+        playersList.appendChild(li);
+    });
+}
+
+function updateGameInfo() {
+    roundDisplay.innerHTML = `Round <span>${currentRound} / ${TOTAL_ROUNDS}</span>`;
+}
+
+function resetToLobby() {
+    players = {};
+    addedPlayersList.innerHTML = '';
+    startBtn.disabled = true;
+    startOverlay.classList.add('active');
+    updatePlayersPanel();
+    document.getElementById('streetview').innerHTML = '';
+}
+
+</script>
+<script async defer
+    src={`https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=geometry&callback=initializeGame`}>
+</script>
+</body>
+</html>
+

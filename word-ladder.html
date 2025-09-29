@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Word Ladder - STEPZ DEBATES</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+        :root {
+            --background-color: #121212;
+            --card-color: #1e1e1e;
+            --primary-accent: #b328a4;
+            --text-color: #ffffff;
+            --text-muted: #a0a0a0;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --border-radius: 12px;
+            --font-family: 'Poppins', sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .game-container {
+            width: 100%;
+            max-width: 500px;
+            background-color: var(--card-color);
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .header {
+            display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;
+        }
+        .logo { width: 80px; height: 80px; border-radius: 50%; margin-bottom: 15px; border: 2px solid var(--primary-accent); }
+        .header h1 { font-size: 1.8rem; font-weight: 700; }
+        .header p { font-size: 0.9rem; color: var(--text-muted); }
+
+        .word-display {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-bottom: 25px;
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        .word-box {
+            background-color: rgba(0,0,0,0.3);
+            padding: 10px 20px;
+            border-radius: 8px;
+            min-width: 120px;
+        }
+        .arrow {
+            font-size: 2.5rem;
+            color: var(--primary-accent);
+        }
+
+        .ladder-area {
+            background-color: rgba(0,0,0,0.2);
+            padding: 15px;
+            border-radius: var(--border-radius);
+            margin-bottom: 20px;
+            min-height: 200px;
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 600;
+            letter-spacing: 2px;
+            line-height: 1.8;
+        }
+        
+        #word-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        #word-input {
+            flex-grow: 1;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background-color: #2a2a2a;
+            color: white;
+            font-family: var(--font-family);
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            text-align: center;
+            letter-spacing: 4px;
+        }
+        .btn {
+            border: none; border-radius: 8px; padding: 12px 20px;
+            font-size: 1.2rem; font-weight: 600; cursor: pointer;
+            transition: all 0.2s ease;
+            color: white;
+        }
+        .btn-primary { background-color: var(--primary-accent); }
+        
+        .error-message {
+            min-height: 20px;
+            color: var(--danger-color);
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(18, 18, 18, 0.98);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden; transition: opacity 0.4s ease;
+            z-index: 10; text-align: center; padding: 20px;
+        }
+        .overlay.active { opacity: 1; visibility: visible; }
+        .overlay h2 { font-size: 2.5rem; margin-bottom: 10px; color: var(--success-color); }
+        .overlay p { font-size: 1.1rem; color: var(--text-muted); margin-bottom: 25px; }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <header class="header">
+            <img src="logo.jpeg" alt="Logo" class="logo">
+            <h1>Word Ladder</h1>
+            <p>Change one letter at a time to reach the target word.</p>
+        </header>
+
+        <div class="word-display">
+            <div class="word-box" id="start-word-display">----</div>
+            <div class="arrow">→</div>
+            <div class="word-box" id="target-word-display">----</div>
+        </div>
+        
+        <div class="ladder-area" id="ladder-display"></div>
+
+        <form id="word-form">
+            <input type="text" id="word-input" maxlength="4" autocomplete="off" placeholder="NEXT">
+            <button type="submit" class="btn btn-primary">Enter</button>
+        </form>
+
+        <p class="error-message" id="error-message"></p>
+
+        <button class="btn btn-primary" id="restart-btn" style="width: 100%;">New Puzzle</button>
+
+        <div class="overlay" id="win-overlay">
+            <h2>Congratulations!</h2>
+            <p id="win-message"></p>
+            <button class="btn btn-primary" id="play-again-btn">Play Again</button>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // --- DICTIONARY ---
+    // A list of common 4-letter English words.
+    const WORD_LIST = ["ABLE","ACID","AGED","ALSO","AREA","ARMY","AWAY","BABY","BACK","BALL","BAND","BANK","BASE","BATH","BEAM","BEAN","BEAR","BEAT","BELL","BELT","BEND","BEST","BIRD","BLOW","BLUE","BOAT","BODY","BOMB","BOND","BONE","BOOK","BOOT","BORN","BOSS","BOTH","BOWL","BURN","BUSH","BUSY","CALL","CALM","CAME","CARD","CARE","CASE","CASH","CAST","CELL","CHAT","CHIP","CITY","CLUB","COAL","COAT","CODE","COLD","COME","COOK","COOL","COPY","CORE","COST","CREW","CROP","DARK","DATA","DATE","DEAL","DEAR","DEBT","DECK","DEEP","DEER","DESK","DIAL","DIET","DIRT","DOES","DONE","DOOR","DOWN","DRAW","DREW","DROP","DRUG","DUAL","DUCK","DUST","DUTY","EACH","EARN","EASY","EDGE","EVEN","EVER","EVIL","EXIT","FACE","FACT","FAIL","FAIR","FALL","FARM","FAST","FEAR","FEED","FEEL","FEET","FELL","FELT","FILE","FILL","FILM","FIND","FINE","FIRE","FIRM","FISH","FIVE","FLAG","FLAT","FLOW","FOOD","FOOT","FORD","FORM","FORT","FOUR","FREE","FROM","FUEL","FULL","FUND","GAIN","GAME","GATE","GAVE","GEAR","GENE","GIFT","GIRL","GIVE","GLAD","GOAL","GOES","GOLD","GOLF","GONE","GOOD","GRAY","GREW","GREY","GROW","GULF","HAIR","HALF","HALL","HAND","HANG","HARD","HARM","HATE","HAVE","HEAD","HEAR","HEAT","HELD","HELL","HELP","HERE","HERO","HIGH","HILL","HIRE","HOLD","HOLE","HOLY","HOME","HOPE","HOUR","HUGE","HUNT","HURT","IDEA","INCH","INTO","IRON","ITEM","JOIN","JUMP","JURY","JUST","KEEP","KICK","KILL","KIND","KING","KNEE","KNEW","KNOW","LACK","LADY","LAID","LAKE","LAND","LANE","LAST","LATE","LAZY","LEAD","LEAF","LEFT","LEND","LESS","LIFE","LIFT","LIKE","LINE","LINK","LIST","LIVE","LOAD","LOAN","LOCK","LOGS","LONG","LOOK","LOOP","LORD","LOSE","LOSS","LOST","LOUD","LOVE","LUCK","MADE","MAIL","MAIN","MAKE","MALE","MANY","MARK","MASS","MEAL","MEAN","MEAT","MEET","MENU","MILE","MIND","MINE","MISS","MODE","MOOD","MOON","MORE","MOST","MOVE","MUCH","MUST","NAME","NAVY","NEAR","NECK","NEED","NEWS","NEXT","NICE","NINE","NONE","NOSE","NOTE","OKAY","ONCE","ONLY","ONTO","OPEN","ORAL","OVER","PACE","PACK","PAGE","PAID","PAIN","PAIR","PALM","PARK","PART","PASS","PAST","PATH","PEAK","PICK","PINK","PIPE","PLAN","PLAY","PLOT","PLUG","PLUS","POEM","POET","POLE","POOL","POOR","PORT","POST","PULL","PURE","PUSH","RACE","RAIN","RANK","RARE","RATE","READ","REAL","REAR","RELY","RENT","REST","RICE","RICH","RIDE","RING","RISE","RISK","ROAD","ROCK","ROLE","ROLL","ROOF","ROOM","ROOT","ROSE","ROUGH","ROUND","ROWN","RULE","RUSH","SAID","SAKE","SALE","SALT","SAME","SAND","SAVE","SEAT","SEED","SEEK","SEEM","SELF","SELL","SEND","SENT","SEVEN","SHIP","SHOE","SHOP","SHOT","SHOW","SICK","SIDE","SIGN","SING","SITE","SIZE","SKIN","SLOW","SNOW","SOFT","SOIL","SOLD","SOME","SONG","SOON","SORT","SOUL","SPOT","STAR","STAY","STEP","STOP","SUCH","SUIT","SURE","TAKE","TALE","TALK","TALL","TANK","TAPE","TASK","TEAM","TEAR","TELL","TEND","TERM","TEST","TEXT","THAN","THAT","THEM","THEN","THEY","THIN","THIS","THUS","TIME","TINY","TONE","TOOL","TOOK","TOUR","TOWN","TREE","TRIP","TRUE","TUNE","TURN","TWIN","TYPE","UNIT","UPON","USED","USER","VAST","VERY","VIEW","VOTE","WAIT","WAKE","WALK","WALL","WANT","WARD","WARM","WASH","WAVE","WEAK","WEAR","WEEK","WELL","WENT","WERE","WEST","WHAT","WHEN","WIDE","WIFE","WILD","WILL","WIND","WINE","WING","WIRE","WISE","WISH","WITH","WOOD","WORD","WORE","WORK","YARD","YEAR","YOUR"];
+
+    // --- GAME STATE ---
+    let startWord, targetWord;
+    let ladder = [];
+    let isGameActive = false;
+
+    // --- DOM ELEMENTS ---
+    const startWordDisplay = document.getElementById('start-word-display');
+    const targetWordDisplay = document.getElementById('target-word-display');
+    const ladderDisplay = document.getElementById('ladder-display');
+    const wordForm = document.getElementById('word-form');
+    const wordInput = document.getElementById('word-input');
+    const errorMessage = document.getElementById('error-message');
+    const restartBtn = document.getElementById('restart-btn');
+    const winOverlay = document.getElementById('win-overlay');
+    const winMessage = document.getElementById('win-message');
+    const playAgainBtn = document.getElementById('play-again-btn');
+
+    // --- GAME LOGIC ---
+    function startGame() {
+        // Select two different random words
+        do {
+            startWord = WORD_LIST[Math.floor(Math.random() * WORD_LIST.length)];
+            targetWord = WORD_LIST[Math.floor(Math.random() * WORD_LIST.length)];
+        } while (startWord === targetWord);
+
+        startWordDisplay.textContent = startWord;
+        targetWordDisplay.textContent = targetWord;
+
+        ladder = [startWord];
+        isGameActive = true;
+
+        wordInput.disabled = false;
+        wordInput.value = '';
+        errorMessage.textContent = '';
+        winOverlay.classList.remove('active');
+
+        renderLadder();
+        wordInput.focus();
+    }
+
+    function renderLadder() {
+        ladderDisplay.innerHTML = ladder.join('<br>↓<br>');
+    }
+
+    function handleFormSubmit(e) {
+        e.preventDefault();
+        if (!isGameActive) return;
+
+        const attempt = wordInput.value.toUpperCase();
+        const lastWord = ladder[ladder.length - 1];
+        
+        errorMessage.textContent = ''; // Clear previous error
+
+        // Validation
+        if (attempt.length !== 4) {
+            errorMessage.textContent = "Word must be 4 letters long.";
+            return;
+        }
+        if (!WORD_LIST.includes(attempt)) {
+            errorMessage.textContent = "Not a valid word.";
+            return;
+        }
+        if (ladder.includes(attempt)) {
+            errorMessage.textContent = "Word already used in this ladder.";
+            return;
+        }
+        if (!isOneLetterApart(lastWord, attempt)) {
+            errorMessage.textContent = "Must be one letter different from the previous word.";
+            return;
+        }
+        
+        // Success
+        ladder.push(attempt);
+        renderLadder();
+        wordInput.value = '';
+        
+        // Check for win
+        if (attempt === targetWord) {
+            isGameActive = false;
+            wordInput.disabled = true;
+            winMessage.textContent = `You solved it in ${ladder.length - 1} steps!`;
+            setTimeout(() => winOverlay.classList.add('active'), 500);
+        }
+    }
+
+    function isOneLetterApart(word1, word2) {
+        let diffCount = 0;
+        for (let i = 0; i < word1.length; i++) {
+            if (word1[i] !== word2[i]) {
+                diffCount++;
+            }
+        }
+        return diffCount === 1;
+    }
+
+    // --- EVENT LISTENERS ---
+    wordForm.addEventListener('submit', handleFormSubmit);
+    restartBtn.addEventListener('click', startGame);
+    playAgainBtn.addEventListener('click', startGame);
+
+    // Initial setup
+    startGame();
+});
+</script>
+</body>
+</html>
