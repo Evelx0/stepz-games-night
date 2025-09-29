@@ -192,6 +192,7 @@ const TOTAL_ROUNDS = 5;
 
 let map, streetView, guessMarker, guessBtn, mapContainer, confirmGuessBtn, finishRoundBtn, startOverlay, startBtn, resultOverlay, nextRoundBtn, roundDisplay, playersList, playerAddForm, newPlayerNameInput, addedPlayersList, playerNameInput;
 
+// This function will be called by the Google Maps script once it's loaded
 function initializeGame() {
     // DOM bindings
     guessBtn = document.getElementById('guess-btn');
@@ -393,9 +394,13 @@ function resetToLobby() {
     document.getElementById('streetview').innerHTML = '';
 }
 
-</script>
-<script async defer
-    src={`https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=geometry&callback=initializeGame`}>
+// Dynamically load the Google Maps script
+const script = document.createElement('script');
+script.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=geometry&callback=initializeGame`;
+script.async = true;
+script.defer = true;
+document.head.appendChild(script);
+
 </script>
 </body>
 </html>
