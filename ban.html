@@ -87,7 +87,7 @@
             margin-bottom: 30px;
         }
 
-        /* --- NEW: Live Results Bar --- */
+        /* --- Live Results Bar --- */
         #live-results {
             width: 100%;
             margin-bottom: 20px;
@@ -128,7 +128,6 @@
         }
         .results-text .ban-text { color: var(--danger-color); }
         .results-text .keep-text { color: var(--success-color); }
-        /* --- End of New Styles --- */
 
         .vote-controls {
             display: flex;
@@ -207,7 +206,7 @@
     const VOTE_CONFIG = {
         USER_ID: "user_username_001", // IMPORTANT: Must be unique for each poll
         USER_NAME: "UsernameHere",   
-        USER_PHOTO: "user-photo.jpeg"      
+        USER_PHOTO: "user-photo.jpeg" // e.g., "dave.png". Leave as "" for no photo.
     };
     // --- END OF CONFIGURATION ---
 
@@ -254,9 +253,13 @@
         // --- 3. Fetch Current Vote Totals (GET) ---
         async function fetchVotes() {
             try {
-                // We pass the pollId as a URL parameter for a GET request
-                const res = await fetch(`/api/vote?pollId=${VOTE_CONFIG.USER_ID}`);
-                if (!res.ok) throw new Error('Failed to fetch votes');
+                // === CACHE-BUSTING FIX ===
+                // We add a unique timestamp to the URL to "bust" Vercel's cache.
+                const cacheBuster = `&t=${new Date().getTime()}`;
+                const res = await fetch(`/api/vote?pollId=${VOTE_CONFIG.USER_ID}${cacheBuster}`);
+                // =======================
+                
+                if (!res.ok) throw new Error(`Failed to fetch votes: ${res.statusText}`);
                 
                 const data = await res.json();
                 updateLiveResultsUI(data.ban, data.keep);
@@ -286,7 +289,7 @@
                     }),
                 });
 
-                if (!res.ok) throw new Error('Vote failed to submit');
+                if (!res.ok) throw new Error(`Vote failed to submit: ${res.statusText}`);
                 
                 // The API returns the new totals
                 const newTotals = await res.json();
