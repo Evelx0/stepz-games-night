@@ -50,13 +50,19 @@ export default async function handler(request) {
 
       console.log('Attempting to fetch votes from KV for pollId:', pollId);
       
-      // === FIX ===
-      // Replaced kv.hgetall() with kv.hmget() to be more specific
-      const [banVotes, keepVotes] = await kv.hmget(pollId, 'ban', 'keep');
-      console.log('Successfully fetched votes:', { banVotes, keepVotes });
-      
-      const ban = banVotes || 0;
-      const keep = keepVotes || 0;
+      // === FIX: Safely handle the response from hmget ===
+      let ban = 0;
+      let keep = 0;
+      const votesResult = await kv.hmget(pollId, 'ban', 'keep');
+      console.log('Successfully fetched votes result:', votesResult);
+
+      // Check if the result is an array before destructuring
+      if (Array.isArray(votesResult)) {
+        ban = votesResult[0] || 0;
+        keep = votesResult[1] || 0;
+      } else {
+        console.warn('kv.hmget did not return an array. Defaulting votes to 0.');
+      }
       // ===========
       
       console.log('Returning vote counts:', { ban, keep });
@@ -85,13 +91,19 @@ export default async function handler(request) {
       await kv.hincrby(pollId, voteType, 1);
       console.log('Increment successful. Fetching new totals...');
 
-      // === FIX ===
-      // Replaced kv.hgetall() with kv.hmget() here as well
-      const [banVotes, keepVotes] = await kv.hmget(pollId, 'ban', 'keep');
-      console.log('Successfully fetched new totals:', { banVotes, keepVotes });
-
-      const ban = banVotes || 0;
-      const keep = keepVotes || 0;
+      // === FIX: Safely handle the response from hmget ===
+      let ban = 0;
+      let keep = 0;
+      const newVotesResult = await kv.hmget(pollId, 'ban', 'keep');
+      console.log('Successfully fetched new totals result:', newVotesResult);
+      
+      // Check if the result is an array before destructuring
+      if (Array.isArray(newVotesResult)) {
+        ban = newVotesResult[0] || 0;
+        keep = newVotesResult[1] || 0;
+      } else {
+        console.warn('kv.hmget did not return an array. Defaulting votes to 0.');
+      }
       // ===========
       
       console.log('Returning new counts:', { ban, keep });
