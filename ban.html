@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STEPZ DEBATES - Ban Vote</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap');
+        :root {
+            --background-color: #121212;
+            --card-color: #1e1e1e;
+            --primary-accent: #b328a4; /* StepzDebates Purple */
+            --text-color: #ffffff;
+            --text-muted: #a0a0a0;
+            --success-color: #28a745; /* Green for "No Ban" */
+            --danger-color: #dc3545;  /* Red for "Ban" */
+            --border-radius: 12px;
+            --font-family: 'Poppins', sans-serif;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: var(--font-family);
+            background-color: var(--background-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .vote-container {
+            width: 100%;
+            max-width: 500px; /* Narrower for a simple vote */
+            background-color: var(--card-color);
+            border-radius: var(--border-radius);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .header { 
+            display: flex; 
+            justify-content: center; /* Centered header */
+            align-items: center; 
+            margin-bottom: 25px; 
+            gap: 15px;
+        }
+        .logo { 
+            width: 50px; 
+            height: 50px; 
+            border-radius: 50%; 
+            border: 2px solid var(--primary-accent); 
+        }
+        .header h1 { 
+            font-size: 1.8rem; 
+            font-weight: 700; 
+        }
+        
+        /* New Styles for the vote */
+        .vote-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .target-user {
+            margin-bottom: 20px;
+        }
+        #target-photo {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            border: 4px solid var(--primary-accent);
+            margin-bottom: 15px;
+            object-fit: cover;
+            background-color: #333; /* Placeholder bg */
+        }
+        #target-name {
+            font-size: 2.2rem;
+            font-weight: 700;
+            color: var(--primary-accent);
+        }
+        .vote-prompt {
+            font-size: 1.1rem;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+        }
+        .vote-controls {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            width: 100%;
+        }
+        .results-message {
+            display: none; /* Hidden by default */
+            margin-top: 20px;
+        }
+        #vote-receipt {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+        #vote-receipt strong {
+            text-transform: uppercase;
+        }
+
+        /* Button Styles (from geo.html) */
+        .btn {
+            border: none; border-radius: 8px; padding: 15px 30px;
+            font-size: 1.2rem; font-weight: 600; cursor: pointer;
+            transition: all 0.2s ease;
+            color: white;
+            flex-grow: 1; /* Make buttons fill space */
+        }
+        .btn:disabled { cursor: not-allowed; opacity: 0.5; }
+        .btn-success { background-color: var(--success-color); }
+        .btn-danger { background-color: var(--danger-color); }
+        .btn-success:hover { background-color: #34c759; }
+        .btn-danger:hover { background-color: #ff453a; }
+    </style>
+</head>
+<body>
+    <div class="vote-container">
+        <header class="header">
+            <img src="logo.jpeg" alt="Logo" class="logo"> <h1>Ban Vote</h1>
+        </header>
+
+        <div class="vote-content">
+            <div class="target-user">
+                <img src="" alt="User Photo" id="target-photo">
+                <h2 id="target-name"></h2>
+            </div>
+            
+            <p class="vote-prompt">Should this person be banned from the STEPZ DEBATES TikTok Live?</p>
+            
+            <div class="vote-controls" id="vote-controls">
+                <button class="btn btn-danger" id="ban-btn">YES - Ban</button>
+                <button class="btn btn-success" id="noban-btn">NO - Keep</button>
+            </div>
+
+            <div class="results-message" id="results-message">
+                <p id="vote-receipt"></p>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // --- 1. MANUAL CONFIGURATION ---
+    // Change these values for each new vote.
+    // The USER_ID is critical. It's used for the localStorage key.
+    // Make it unique for each person you put up for a vote.
+    const VOTE_CONFIG = {
+        USER_ID: "user_username_001", // Example: "banned_user_dave"
+        USER_NAME: "UsernameHere",   // Example: "Dave"
+        USER_PHOTO: "user-photo.jpeg"      // Example: "dave.png" (or leave as "" for no photo)
+    };
+    // --- END OF CONFIGURATION ---
+
+
+    document.addEventListener('DOMContentLoaded', () => {
+        // Get DOM elements
+        const banBtn = document.getElementById('ban-btn');
+        const nobanBtn = document.getElementById('noban-btn');
+        const voteControls = document.getElementById('vote-controls');
+        const resultsMessage = document.getElementById('results-message');
+        const voteReceipt = document.getElementById('vote-receipt');
+        const targetName = document.getElementById('target-name');
+        const targetPhoto = document.getElementById('target-photo');
+
+        // This is the unique key for this specific poll
+        const VOTE_KEY = `vote_${VOTE_CONFIG.USER_ID}`;
+
+        // --- 2. Initialize Page ---
+        function setupPage() {
+            // Set user info
+            targetName.textContent = VOTE_CONFIG.USER_NAME;
+            if (VOTE_CONFIG.USER_PHOTO) {
+                targetPhoto.src = VOTE_CONFIG.USER_PHOTO;
+                targetPhoto.alt = VOTE_CONFIG.USER_NAME;
+            } else {
+                targetPhoto.style.display = 'none'; // Hide image if not provided
+            }
+
+            // Check if user has already voted
+            const existingVote = localStorage.getItem(VOTE_KEY);
+            if (existingVote) {
+                showResults(existingVote); // 'ban' or 'noban'
+            }
+        }
+
+        // --- 3. Handle a Vote ---
+        function handleVote(voteType) {
+            // Save vote to localStorage to prevent re-voting
+            localStorage.setItem(VOTE_KEY, voteType);
+            
+            // Show the results message
+            showResults(voteType);
+        }
+
+        // --- 4. Show the "You Voted" Message ---
+        function showResults(voteType) {
+            // Hide the buttons
+            voteControls.style.display = 'none';
+            
+            // Show the results message
+            const voteText = voteType === 'ban' ? 'BAN' : 'KEEP';
+            voteReceipt.innerHTML = `You voted to <strong>${voteText}</strong> ${VOTE_CONFIG.USER_NAME}.`;
+            
+            // Set color based on vote
+            if (voteType === 'ban') {
+                voteReceipt.style.color = 'var(--danger-color)';
+            } else {
+                voteReceipt.style.color = 'var(--success-color)';
+            }
+
+            resultsMessage.style.display = 'block';
+        }
+
+        // --- 5. Add Event Listeners ---
+        banBtn.addEventListener('click', () => handleVote('ban'));
+        nobanBtn.addEventListener('click', () => handleVote('noban'));
+
+        // Run setup on page load
+        setupPage();
+    });
+</script>
+</body>
+</html>
