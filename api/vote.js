@@ -32,31 +32,38 @@ async function parseJSONBody(req) {
 // --- END HELPER FUNCTION ---
 
 
+// === NEW: Default Headers for ALL responses ===
+const responseHeaders = {
+  'Content-Type': 'application/json',
+  'Access-Control-Allow-Origin': 'https://stepz-games.vercel.app',
+  'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate', // Force no caching
+};
+// =============================================
+
+
 export default async function handler(request) {
 
-  // === NEW: Handle OPTIONS preflight requests ===
+  // === Handle OPTIONS preflight requests ===
   if (request.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
       headers: {
-        'Access-Control-Allow-Origin': '*', // Or 'https://stepz-games.vercel.app'
+        'Access-Control-Allow-Origin': 'https://stepz-games.vercel.app',
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
+        'Cache-Control': 'no-cache, no-store, max-age=0, must-revalidate',
       },
     });
   }
   // =============================================
 
-  // Use a try...catch block for error handling
   try {
     // --- PART 1: Handle GET request (Fetch current votes) ---
     if (request.method === 'GET') {
-      
       const { searchParams } = new URL(request.url, `https://${request.headers.host}`);
       const pollId = searchParams.get('pollId');
-
       if (!pollId) {
-        return new Response(JSON.stringify({ error: 'pollId is required' }), { status: 400 });
+        return new Response(JSON.stringify({ error: 'pollId is required' }), { status: 400, headers: responseHeaders });
       }
       
       let ban = 0;
@@ -74,24 +81,18 @@ export default async function handler(request) {
       
       return new Response(JSON.stringify({ ban, keep }), {
         status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*', // === RE-ADDED CORS HEADER ===
-        },
+        headers: responseHeaders, // Use default headers
       });
     }
 
     // --- PART 2: Handle POST request (Submit a new vote) ---
     if (request.method === 'POST') {
-      
       const { pollId, voteType } = await parseJSONBody(request);
-
       if (!pollId || !voteType) {
-        return new Response(JSON.stringify({ error: 'pollId and voteType are required' }), { status: 400 });
+        return new Response(JSON.stringify({ error: 'pollId and voteType are required' }), { status: 400, headers: responseHeaders });
       }
-
       if (voteType !== 'ban' && voteType !== 'keep') {
-        return new Response(JSON.stringify({ error: 'Invalid voteType' }), { status: 400 });
+        return new Response(JSON.stringify({ error: 'Invalid voteType' }), { status: 400, headers: responseHeaders });
       }
 
       await kv.hincrby(pollId, voteType, 1);
@@ -111,19 +112,16 @@ export default async function handler(request) {
       
       return new Response(JSON.stringify({ ban, keep }), {
         status: 200,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*', // === RE-ADDED CORS HEADER ===
-        },
+        headers: responseHeaders, // Use default headers
       });
     }
 
     // --- PART 3: Handle other methods ---
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405, headers: responseHeaders });
 
   } catch (error) {
     console.error('--- UNHANDLED ERROR ---');
     console.error(error);
-    return new Response(JSON.stringify({ error: 'Internal Server Error' }), { status: 500 });
+    return new Response(JSON.stringify({ error: 'Internal Server Error' }), { status: 500, headers: responseHeaders });
   }
 }
