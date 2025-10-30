@@ -1,6 +1,6 @@
 import { createClient } from '@vercel/kv';
 
-// We now create the client manually using your environment variables
+// We create the client manually using your environment variables
 const kv = createClient({
   url: process.env.KV_REST_API_URL,
   token: process.env.KV_REST_API_TOKEN,
@@ -39,17 +39,7 @@ export default async function handler(request) {
     if (request.method === 'GET') {
       
       console.log('--- GET REQUEST (START) ---');
-      console.log('Request URL:', request.url);
-      console.log('Request Host Header:', request.headers.host);
-
-      if (!request.url || !request.headers.host) {
-          console.error('CRITICAL: URL or Host is missing.');
-          return new Response(JSON.stringify({ error: 'Internal config error' }), { status: 500 });
-      }
-
-      console.log('Parsing URL...');
       const { searchParams } = new URL(request.url, `https://${request.headers.host}`);
-      
       const pollId = searchParams.get('pollId');
       console.log('Parsed pollId:', pollId);
 
@@ -59,13 +49,17 @@ export default async function handler(request) {
       }
 
       console.log('Attempting to fetch votes from KV for pollId:', pollId);
-      const votes = await kv.hgetall(pollId);
-      console.log('Successfully fetched votes:', votes);
       
-      const ban = votes?.ban || 0;
-      const keep = votes?.keep || 0;
+      // === FIX ===
+      // Replaced kv.hgetall() with kv.hmget() to be more specific
+      const [banVotes, keepVotes] = await kv.hmget(pollId, 'ban', 'keep');
+      console.log('Successfully fetched votes:', { banVotes, keepVotes });
+      
+      const ban = banVotes || 0;
+      const keep = keepVotes || 0;
+      // ===========
+      
       console.log('Returning vote counts:', { ban, keep });
-      
       console.log('--- GET REQUEST (SUCCESS) ---');
       return new Response(JSON.stringify({ ban, keep }), {
         status: 200,
@@ -89,13 +83,18 @@ export default async function handler(request) {
 
       console.log(`Incrementing ${voteType} for ${pollId}...`);
       await kv.hincrby(pollId, voteType, 1);
-      console.log('Increment successful.');
+      console.log('Increment successful. Fetching new totals...');
 
-      const newVotes = await kv.hgetall(pollId);
-      const ban = newVotes?.ban || 0;
-      const keep = newVotes?.keep || 0;
+      // === FIX ===
+      // Replaced kv.hgetall() with kv.hmget() here as well
+      const [banVotes, keepVotes] = await kv.hmget(pollId, 'ban', 'keep');
+      console.log('Successfully fetched new totals:', { banVotes, keepVotes });
+
+      const ban = banVotes || 0;
+      const keep = keepVotes || 0;
+      // ===========
+      
       console.log('Returning new counts:', { ban, keep });
-
       console.log('--- POST REQUEST (SUCCESS) ---');
       return new Response(JSON.stringify({ ban, keep }), {
         status: 200,
