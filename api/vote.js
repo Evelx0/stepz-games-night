@@ -5,7 +5,12 @@ export default async function handler(request) {
   try {
     // --- PART 1: Handle GET request (Fetch current votes) ---
     if (request.method === 'GET') {
-      const { searchParams } = new URL(request.url);
+      
+      // === THIS IS THE FIXED LINE ===
+      // We combine the request's 'host' header with the 'request.url' to create a full, valid URL.
+      const { searchParams } = new URL(request.url, `https://${request.headers.get('host')}`);
+      // ============================
+
       const pollId = searchParams.get('pollId');
 
       if (!pollId) {
