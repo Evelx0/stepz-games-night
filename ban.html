@@ -9,11 +9,11 @@
         :root {
             --background-color: #121212;
             --card-color: #1e1e1e;
-            --primary-accent: #b328a4; /* StepzDebates Purple */
+            --primary-accent: #b328a4;
             --text-color: #ffffff;
             --text-muted: #a0a0a0;
-            --success-color: #28a745; /* Green for "Keep" */
-            --danger-color: #dc3545;  /* Red for "Ban" */
+            --success-color: #28a745;
+            --danger-color: #dc3545;
             --border-radius: 12px;
             --font-family: 'Poppins', sans-serif;
         }
@@ -57,8 +57,6 @@
             font-size: 1.8rem; 
             font-weight: 700; 
         }
-        
-        /* User Info */
         .vote-content {
             display: flex;
             flex-direction: column;
@@ -86,8 +84,6 @@
             color: var(--text-muted);
             margin-bottom: 30px;
         }
-
-        /* --- Live Results Bar --- */
         #live-results {
             width: 100%;
             margin-bottom: 20px;
@@ -135,8 +131,6 @@
             gap: 20px;
             width: 100%;
         }
-
-        /* Message after voting */
         .vote-receipt-message {
             display: none; /* Hidden by default */
             margin-top: 20px;
@@ -149,8 +143,6 @@
         #vote-receipt strong {
             text-transform: uppercase;
         }
-
-        /* Button Styles */
         .btn {
             border: none; border-radius: 8px; padding: 15px 30px;
             font-size: 1.2rem; font-weight: 600; cursor: pointer;
@@ -161,6 +153,14 @@
         .btn:disabled { cursor: not-allowed; opacity: 0.5; }
         .btn-success { background-color: var(--success-color); }
         .btn-danger { background-color: var(--danger-color); }
+        #reset-vote {
+            display: none; /* Hidden by default */
+            margin-top: 15px;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            cursor: pointer;
+            text-decoration: underline;
+        }
     </style>
 </head>
 <body>
@@ -169,15 +169,12 @@
             <img src="logo.jpeg" alt="Logo" class="logo">
             <h1>Ban Vote</h1>
         </header>
-
         <div class="vote-content">
             <div class="target-user">
                 <img src="" alt="User Photo" id="target-photo">
                 <h2 id="target-name"></h2>
             </div>
-            
             <p class="vote-prompt">Should this person be banned from the STEPZ DEBATES TikTok Live?</p>
-            
             <div id="live-results">
                 <h3>Live Results</h3>
                 <div class="results-bar">
@@ -189,14 +186,13 @@
                     <span class="keep-text"><strong id="keep-count">0</strong> Votes</span>
                 </div>
             </div>
-
             <div class="vote-controls" id="vote-controls">
                 <button class="btn btn-danger" id="ban-btn">YES - Ban</button>
                 <button class="btn btn-success" id="keep-btn">NO - Keep</button>
             </div>
-
             <div class="vote-receipt-message" id="vote-receipt-message">
                 <p id="vote-receipt"></p>
+                <a id="reset-vote">(Reset my vote for testing)</a>
             </div>
         </div>
     </div>
@@ -206,15 +202,13 @@
     const VOTE_CONFIG = {
         USER_ID: "user_username_001", // IMPORTANT: Must be unique for each poll
         USER_NAME: "UsernameHere",   
-        USER_PHOTO: "user-photo.jpeg" // e.g., "dave.png". Leave as "" for no photo.
+        USER_PHOTO: "user-photo.jpeg"
     };
     // --- END OF CONFIGURATION ---
 
 
     document.addEventListener('DOMContentLoaded', () => {
-        console.log('FRONTEND: DOM Loaded. Initializing...');
-        
-        // Get DOM elements
+        // --- All element selections are the same ---
         const banBtn = document.getElementById('ban-btn');
         const keepBtn = document.getElementById('keep-btn');
         const voteControls = document.getElementById('vote-controls');
@@ -222,23 +216,15 @@
         const voteReceipt = document.getElementById('vote-receipt');
         const targetName = document.getElementById('target-name');
         const targetPhoto = document.getElementById('target-photo');
-
-        // Live Result Elements
         const banBar = document.getElementById('ban-bar');
         const keepBar = document.getElementById('keep-bar');
         const banCount = document.getElementById('ban-count');
         const keepCount = document.getElementById('keep-count');
-        
-        console.log('FRONTEND: Elements selected.');
-        if (!banBar || !banCount) {
-            console.error('FRONTEND: CRITICAL ERROR - Result elements not found!');
-        }
-
+        const resetBtn = document.getElementById('reset-vote');
         const VOTE_KEY = `vote_${VOTE_CONFIG.USER_ID}`;
 
         // --- 2. Initialize Page ---
         async function setupPage() {
-            console.log('FRONTEND: setupPage() started.');
             targetName.textContent = VOTE_CONFIG.USER_NAME;
             if (VOTE_CONFIG.USER_PHOTO) {
                 targetPhoto.src = VOTE_CONFIG.USER_PHOTO;
@@ -246,29 +232,24 @@
             } else {
                 targetPhoto.style.display = 'none';
             }
-
             await fetchVotes();
-
             const existingVote = localStorage.getItem(VOTE_KEY);
             if (existingVote) {
-                console.log('FRONTEND: User has already voted:', existingVote);
                 displayVoteReceipt(existingVote);
             }
         }
 
         // --- 3. Fetch Current Vote Totals (GET) ---
         async function fetchVotes() {
-            console.log('FRONTEND: fetchVotes() started...');
             try {
-                const cacheBuster = `&t=${new Date().getTime()}`;
-                const res = await fetch(`/api/vote?pollId=${VOTE_CONFIG.USER_ID}${cacheBuster}`);
-                
-                console.log('FRONTEND: fetchVotes() response received, status:', res.status);
+                // We no longer need the cacheBuster query param
+                const res = await fetch(`/api/vote?pollId=${VOTE_CONFIG.USER_ID}`, {
+                    // === THIS IS THE FIX ===
+                    cache: 'no-store'
+                    // =======================
+                });
                 if (!res.ok) throw new Error(`Failed to fetch votes: ${res.statusText}`);
-                
                 const data = await res.json();
-                console.log('FRONTEND: fetchVotes() data parsed:', data);
-                
                 updateLiveResultsUI(data.ban, data.keep);
             } catch (error) {
                 console.error("FRONTEND: Error in fetchVotes():", error);
@@ -277,7 +258,6 @@
 
         // --- 4. Handle a New Vote (POST) ---
         async function handleVote(voteType) {
-            console.log(`FRONTEND: handleVote() started for: ${voteType}`);
             banBtn.disabled = true;
             keepBtn.disabled = true;
             localStorage.setItem(VOTE_KEY, voteType);
@@ -290,20 +270,19 @@
                         pollId: VOTE_CONFIG.USER_ID,
                         voteType: voteType
                     }),
+                    // === THIS IS THE FIX ===
+                    cache: 'no-store'
+                    // =======================
                 });
 
-                console.log('FRONTEND: handleVote() response received, status:', res.status);
                 if (!res.ok) throw new Error(`Vote failed to submit: ${res.statusText}`);
                 
                 const newTotals = await res.json();
-                console.log('FRONTEND: handleVote() data parsed:', newTotals);
-                
                 updateLiveResultsUI(newTotals.ban, newTotals.keep);
                 displayVoteReceipt(voteType);
 
             } catch (error) {
                 console.error("FRONTEND: Error in handleVote():", error);
-                // Re-enable buttons if submission fails
                 banBtn.disabled = false;
                 keepBtn.disabled = false;
             }
@@ -311,36 +290,36 @@
 
         // --- 5. Update the Visual Results Bar & Counts ---
         function updateLiveResultsUI(banVotes, keepVotes) {
-            console.log(`FRONTEND: updateLiveResultsUI() called with: ban=${banVotes}, keep=${keepVotes}`);
             banVotes = Number(banVotes) || 0;
             keepVotes = Number(keepVotes) || 0;
-
             const totalVotes = banVotes + keepVotes;
             const banPercent = totalVotes === 0 ? 0 : (banVotes / totalVotes) * 100;
             const keepPercent = totalVotes === 0 ? 0 : (keepVotes / totalVotes) * 100;
-
             banBar.style.width = `${banPercent}%`;
             keepBar.style.width = `${keepPercent}%`;
             banBar.textContent = banPercent > 10 ? `${banPercent.toFixed(0)}%` : '';
             keepBar.textContent = keepPercent > 10 ? `${keepPercent.toFixed(0)}%` : '';
             banCount.textContent = banVotes;
             keepCount.textContent = keepVotes;
-            console.log('FRONTEND: UI updated.');
         }
 
         // --- 6. Show the "You Voted" Message ---
         function displayVoteReceipt(voteType) {
-            console.log('FRONTEND: displayVoteReceipt() called.');
             voteControls.style.display = 'none';
-            
             const voteText = voteType === 'ban' ? 'BAN' : 'KEEP';
             voteReceipt.innerHTML = `You voted to <strong>${voteText}</strong> ${VOTE_CONFIG.USER_NAME}.`;
             voteReceipt.style.color = (voteType === 'ban') ? 'var(--danger-color)' : 'var(--success-color)';
             voteReceiptMessage.style.display = 'block';
-            console.log('FRONTEND: Vote receipt displayed.');
+            resetBtn.style.display = 'inline';
         }
 
-        // --- 7. Add Event Listeners ---
+        // --- 7. Handle Reset Click ---
+        resetBtn.addEventListener('click', () => {
+            localStorage.removeItem(VOTE_KEY);
+            window.location.reload(); // Reload the page
+        });
+
+        // --- 8. Add Event Listeners ---
         banBtn.addEventListener('click', () => handleVote('ban'));
         keepBtn.addEventListener('click', () => handleVote('keep'));
 
