@@ -114,7 +114,6 @@
         }
         .bar-ban { background-color: var(--danger-color); }
         .bar-keep { background-color: var(--success-color); }
-
         .results-text {
             display: flex;
             justify-content: space-between;
@@ -124,7 +123,6 @@
         }
         .results-text .ban-text { color: var(--danger-color); }
         .results-text .keep-text { color: var(--success-color); }
-
         .vote-controls {
             display: flex;
             justify-content: center;
@@ -208,7 +206,6 @@
 
 
     document.addEventListener('DOMContentLoaded', () => {
-        // --- All element selections are the same ---
         const banBtn = document.getElementById('ban-btn');
         const keepBtn = document.getElementById('keep-btn');
         const voteControls = document.getElementById('vote-controls');
@@ -242,11 +239,8 @@
         // --- 3. Fetch Current Vote Totals (GET) ---
         async function fetchVotes() {
             try {
-                // We no longer need the cacheBuster query param
                 const res = await fetch(`/api/vote?pollId=${VOTE_CONFIG.USER_ID}`, {
-                    // === THIS IS THE FIX ===
-                    cache: 'no-store'
-                    // =======================
+                    cache: 'no-store' // The fix for browser caching
                 });
                 if (!res.ok) throw new Error(`Failed to fetch votes: ${res.statusText}`);
                 const data = await res.json();
@@ -270,9 +264,7 @@
                         pollId: VOTE_CONFIG.USER_ID,
                         voteType: voteType
                     }),
-                    // === THIS IS THE FIX ===
-                    cache: 'no-store'
-                    // =======================
+                    cache: 'no-store' // The fix for browser caching
                 });
 
                 if (!res.ok) throw new Error(`Vote failed to submit: ${res.statusText}`);
