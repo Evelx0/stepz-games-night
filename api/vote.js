@@ -1,6 +1,14 @@
-import { kv } from '@vercel/kv';
+// --- CHANGED LINE 1 ---
+import { createClient } from '@vercel/kv';
 
-// --- NEW HELPER FUNCTION TO PARSE REQUEST BODY ---
+// --- NEW LINES (2-5) ---
+// We now create the client manually using your environment variables
+const kv = createClient({
+  url: process.env.KV_REST_API_URL,
+  token: process.env.KV_REST_API_TOKEN,
+});
+
+// --- HELPER FUNCTION TO PARSE REQUEST BODY ---
 async function parseJSONBody(req) {
   return new Promise((resolve, reject) => {
     let body = '';
@@ -32,16 +40,14 @@ export default async function handler(request) {
     // --- PART 1: Handle GET request (Fetch current votes) ---
     if (request.method === 'GET') {
       
-      // Fixed line for URL parsing
       const { searchParams } = new URL(request.url, `https://${request.headers.host}`);
-
       const pollId = searchParams.get('pollId');
 
       if (!pollId) {
         return new Response(JSON.stringify({ error: 'pollId is required' }), { status: 400 });
       }
 
-      // Get all fields ("ban" and "keep") from the hash
+      // This line will now work because 'kv' is correctly initialized
       const votes = await kv.hgetall(pollId);
       
       const ban = votes?.ban || 0;
@@ -56,10 +62,7 @@ export default async function handler(request) {
     // --- PART 2: Handle POST request (Submit a new vote) ---
     if (request.method === 'POST') {
       
-      // === THIS IS THE FIXED LINE ===
-      // We now use our new helper function instead of request.json()
       const { pollId, voteType } = await parseJSONBody(request);
-      // ============================
 
       if (!pollId || !voteType) {
         return new Response(JSON.stringify({ error: 'pollId and voteType are required' }), { status: 400 });
@@ -69,8 +72,7 @@ export default async function handler(request) {
         return new Response(JSON.stringify({ error: 'Invalid voteType' }), { status: 400 });
       }
 
-      // Atomically increment the vote count for the specific pollId
-      // hincrby(key, field, increment)
+      // This line will also work now
       await kv.hincrby(pollId, voteType, 1);
 
       // Get the new totals and return them
