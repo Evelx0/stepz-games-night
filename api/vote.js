@@ -33,7 +33,7 @@ async function parseJSONBody(req) {
 
 
 export default async function handler(request) {
-  
+
   // === NEW: Handle OPTIONS preflight requests ===
   if (request.method === 'OPTIONS') {
     return new Response(null, {
@@ -58,7 +58,7 @@ export default async function handler(request) {
       if (!pollId) {
         return new Response(JSON.stringify({ error: 'pollId is required' }), { status: 400 });
       }
-
+      
       let ban = 0;
       let keep = 0;
       const votesResult = await kv.hmget(pollId, 'ban', 'keep');
@@ -76,7 +76,7 @@ export default async function handler(request) {
         status: 200,
         headers: {
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*', // Add this header
+          'Access-Control-Allow-Origin': '*', // === RE-ADDED CORS HEADER ===
         },
       });
     }
@@ -113,7 +113,7 @@ export default async function handler(request) {
         status: 200,
         headers: {
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*', // Add this header
+          'Access-Control-Allow-Origin': '*', // === RE-ADDED CORS HEADER ===
         },
       });
     }
