@@ -50,18 +50,24 @@ export default async function handler(request) {
 
       console.log('Attempting to fetch votes from KV for pollId:', pollId);
       
-      // === FIX: Safely handle the response from hmget ===
+      // === FIX: Handle array, object, or null responses ===
       let ban = 0;
       let keep = 0;
       const votesResult = await kv.hmget(pollId, 'ban', 'keep');
       console.log('Successfully fetched votes result:', votesResult);
 
-      // Check if the result is an array before destructuring
       if (Array.isArray(votesResult)) {
+        console.log('Handling as ARRAY');
         ban = votesResult[0] || 0;
         keep = votesResult[1] || 0;
-      } else {
-        console.warn('kv.hmget did not return an array. Defaulting votes to 0.');
+      } 
+      else if (votesResult && typeof votesResult === 'object') {
+        console.log('Handling as OBJECT');
+        ban = votesResult.ban || 0;
+        keep = votesResult.keep || 0;
+      }
+      else {
+        console.log('Result was not array or object (probably null). Defaulting votes to 0.');
       }
       // ===========
       
@@ -91,18 +97,24 @@ export default async function handler(request) {
       await kv.hincrby(pollId, voteType, 1);
       console.log('Increment successful. Fetching new totals...');
 
-      // === FIX: Safely handle the response from hmget ===
+      // === FIX: Handle array, object, or null responses ===
       let ban = 0;
       let keep = 0;
       const newVotesResult = await kv.hmget(pollId, 'ban', 'keep');
       console.log('Successfully fetched new totals result:', newVotesResult);
       
-      // Check if the result is an array before destructuring
       if (Array.isArray(newVotesResult)) {
+        console.log('Handling as ARRAY');
         ban = newVotesResult[0] || 0;
         keep = newVotesResult[1] || 0;
-      } else {
-        console.warn('kv.hmget did not return an array. Defaulting votes to 0.');
+      } 
+      else if (newVotesResult && typeof newVotesResult === 'object') {
+        console.log('Handling as OBJECT');
+        ban = newVotesResult.ban || 0;
+        keep = newVotesResult.keep || 0;
+      }
+      else {
+        console.log('Result was not array or object (probably null). Defaulting votes to 0.');
       }
       // ===========
       
