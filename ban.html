@@ -212,6 +212,8 @@
 
 
     document.addEventListener('DOMContentLoaded', () => {
+        console.log('FRONTEND: DOM Loaded. Initializing...');
+        
         // Get DOM elements
         const banBtn = document.getElementById('ban-btn');
         const keepBtn = document.getElementById('keep-btn');
@@ -226,12 +228,17 @@
         const keepBar = document.getElementById('keep-bar');
         const banCount = document.getElementById('ban-count');
         const keepCount = document.getElementById('keep-count');
+        
+        console.log('FRONTEND: Elements selected.');
+        if (!banBar || !banCount) {
+            console.error('FRONTEND: CRITICAL ERROR - Result elements not found!');
+        }
 
         const VOTE_KEY = `vote_${VOTE_CONFIG.USER_ID}`;
 
         // --- 2. Initialize Page ---
         async function setupPage() {
-            // Set user info
+            console.log('FRONTEND: setupPage() started.');
             targetName.textContent = VOTE_CONFIG.USER_NAME;
             if (VOTE_CONFIG.USER_PHOTO) {
                 targetPhoto.src = VOTE_CONFIG.USER_PHOTO;
@@ -240,68 +247,62 @@
                 targetPhoto.style.display = 'none';
             }
 
-            // Fetch initial vote counts for everyone
             await fetchVotes();
 
-            // Check if this user has already voted
             const existingVote = localStorage.getItem(VOTE_KEY);
             if (existingVote) {
-                displayVoteReceipt(existingVote); // Show their "You voted..." message
+                console.log('FRONTEND: User has already voted:', existingVote);
+                displayVoteReceipt(existingVote);
             }
         }
 
         // --- 3. Fetch Current Vote Totals (GET) ---
         async function fetchVotes() {
+            console.log('FRONTEND: fetchVotes() started...');
             try {
-                // === CACHE-BUSTING FIX ===
-                // We add a unique timestamp to the URL to "bust" Vercel's cache.
                 const cacheBuster = `&t=${new Date().getTime()}`;
                 const res = await fetch(`/api/vote?pollId=${VOTE_CONFIG.USER_ID}${cacheBuster}`);
-                // =======================
                 
+                console.log('FRONTEND: fetchVotes() response received, status:', res.status);
                 if (!res.ok) throw new Error(`Failed to fetch votes: ${res.statusText}`);
                 
                 const data = await res.json();
+                console.log('FRONTEND: fetchVotes() data parsed:', data);
+                
                 updateLiveResultsUI(data.ban, data.keep);
             } catch (error) {
-                console.error("Error fetching votes:", error);
+                console.error("FRONTEND: Error in fetchVotes():", error);
             }
         }
 
         // --- 4. Handle a New Vote (POST) ---
         async function handleVote(voteType) {
-            // Disable buttons immediately
+            console.log(`FRONTEND: handleVote() started for: ${voteType}`);
             banBtn.disabled = true;
             keepBtn.disabled = true;
-            
-            // Save vote to localStorage to prevent re-voting
             localStorage.setItem(VOTE_KEY, voteType);
             
             try {
                 const res = await fetch('/api/vote', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         pollId: VOTE_CONFIG.USER_ID,
-                        voteType: voteType // 'ban' or 'keep'
+                        voteType: voteType
                     }),
                 });
 
+                console.log('FRONTEND: handleVote() response received, status:', res.status);
                 if (!res.ok) throw new Error(`Vote failed to submit: ${res.statusText}`);
                 
-                // The API returns the new totals
                 const newTotals = await res.json();
+                console.log('FRONTEND: handleVote() data parsed:', newTotals);
                 
-                // Update the UI with the new totals
                 updateLiveResultsUI(newTotals.ban, newTotals.keep);
-                
-                // Show the "You voted..." receipt
                 displayVoteReceipt(voteType);
 
             } catch (error) {
-                console.error("Error submitting vote:", error);
+                console.error("FRONTEND: Error in handleVote():", error);
                 // Re-enable buttons if submission fails
                 banBtn.disabled = false;
                 keepBtn.disabled = false;
@@ -310,6 +311,7 @@
 
         // --- 5. Update the Visual Results Bar & Counts ---
         function updateLiveResultsUI(banVotes, keepVotes) {
+            console.log(`FRONTEND: updateLiveResultsUI() called with: ban=${banVotes}, keep=${keepVotes}`);
             banVotes = Number(banVotes) || 0;
             keepVotes = Number(keepVotes) || 0;
 
@@ -317,32 +319,25 @@
             const banPercent = totalVotes === 0 ? 0 : (banVotes / totalVotes) * 100;
             const keepPercent = totalVotes === 0 ? 0 : (keepVotes / totalVotes) * 100;
 
-            // Update bar widths
             banBar.style.width = `${banPercent}%`;
             keepBar.style.width = `${keepPercent}%`;
-
-            // Update bar text (only if > 10%)
             banBar.textContent = banPercent > 10 ? `${banPercent.toFixed(0)}%` : '';
             keepBar.textContent = keepPercent > 10 ? `${keepPercent.toFixed(0)}%` : '';
-
-            // Update count text
             banCount.textContent = banVotes;
             keepCount.textContent = keepVotes;
+            console.log('FRONTEND: UI updated.');
         }
 
         // --- 6. Show the "You Voted" Message ---
         function displayVoteReceipt(voteType) {
-            // Hide the buttons
+            console.log('FRONTEND: displayVoteReceipt() called.');
             voteControls.style.display = 'none';
             
-            // Show the results message
             const voteText = voteType === 'ban' ? 'BAN' : 'KEEP';
             voteReceipt.innerHTML = `You voted to <strong>${voteText}</strong> ${VOTE_CONFIG.USER_NAME}.`;
-            
-            // Set color based on vote
             voteReceipt.style.color = (voteType === 'ban') ? 'var(--danger-color)' : 'var(--success-color)';
-
             voteReceiptMessage.style.display = 'block';
+            console.log('FRONTEND: Vote receipt displayed.');
         }
 
         // --- 7. Add Event Listeners ---
