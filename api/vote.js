@@ -33,57 +33,58 @@ async function parseJSONBody(req) {
 
 
 export default async function handler(request) {
+  
+  // === NEW: Handle OPTIONS preflight requests ===
+  if (request.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': '*', // Or 'https://stepz-games.vercel.app'
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      },
+    });
+  }
+  // =============================================
+
   // Use a try...catch block for error handling
   try {
     // --- PART 1: Handle GET request (Fetch current votes) ---
     if (request.method === 'GET') {
       
-      console.log('--- GET REQUEST (START) ---');
       const { searchParams } = new URL(request.url, `https://${request.headers.host}`);
       const pollId = searchParams.get('pollId');
-      console.log('Parsed pollId:', pollId);
 
       if (!pollId) {
-        console.error('CRITICAL: pollId not found in query.');
         return new Response(JSON.stringify({ error: 'pollId is required' }), { status: 400 });
       }
 
-      console.log('Attempting to fetch votes from KV for pollId:', pollId);
-      
-      // === FIX: Handle array, object, or null responses ===
       let ban = 0;
       let keep = 0;
       const votesResult = await kv.hmget(pollId, 'ban', 'keep');
-      console.log('Successfully fetched votes result:', votesResult);
 
       if (Array.isArray(votesResult)) {
-        console.log('Handling as ARRAY');
         ban = votesResult[0] || 0;
         keep = votesResult[1] || 0;
       } 
       else if (votesResult && typeof votesResult === 'object') {
-        console.log('Handling as OBJECT');
         ban = votesResult.ban || 0;
         keep = votesResult.keep || 0;
       }
-      else {
-        console.log('Result was not array or object (probably null). Defaulting votes to 0.');
-      }
-      // ===========
       
-      console.log('Returning vote counts:', { ban, keep });
-      console.log('--- GET REQUEST (SUCCESS) ---');
       return new Response(JSON.stringify({ ban, keep }), {
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*', // Add this header
+        },
       });
     }
 
     // --- PART 2: Handle POST request (Submit a new vote) ---
     if (request.method === 'POST') {
-      console.log('--- POST REQUEST (START) ---');
+      
       const { pollId, voteType } = await parseJSONBody(request);
-      console.log('Parsed body:', { pollId, voteType });
 
       if (!pollId || !voteType) {
         return new Response(JSON.stringify({ error: 'pollId and voteType are required' }), { status: 400 });
@@ -93,36 +94,27 @@ export default async function handler(request) {
         return new Response(JSON.stringify({ error: 'Invalid voteType' }), { status: 400 });
       }
 
-      console.log(`Incrementing ${voteType} for ${pollId}...`);
       await kv.hincrby(pollId, voteType, 1);
-      console.log('Increment successful. Fetching new totals...');
 
-      // === FIX: Handle array, object, or null responses ===
       let ban = 0;
       let keep = 0;
       const newVotesResult = await kv.hmget(pollId, 'ban', 'keep');
-      console.log('Successfully fetched new totals result:', newVotesResult);
       
       if (Array.isArray(newVotesResult)) {
-        console.log('Handling as ARRAY');
         ban = newVotesResult[0] || 0;
         keep = newVotesResult[1] || 0;
       } 
       else if (newVotesResult && typeof newVotesResult === 'object') {
-        console.log('Handling as OBJECT');
         ban = newVotesResult.ban || 0;
         keep = newVotesResult.keep || 0;
       }
-      else {
-        console.log('Result was not array or object (probably null). Defaulting votes to 0.');
-      }
-      // ===========
       
-      console.log('Returning new counts:', { ban, keep });
-      console.log('--- POST REQUEST (SUCCESS) ---');
       return new Response(JSON.stringify({ ban, keep }), {
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*', // Add this header
+        },
       });
     }
 
