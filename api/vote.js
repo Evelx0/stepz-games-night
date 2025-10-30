@@ -7,8 +7,8 @@ export default async function handler(request) {
     if (request.method === 'GET') {
       
       // === THIS IS THE FIXED LINE ===
-      // We combine the request's 'host' header with the 'request.url' to create a full, valid URL.
-      const { searchParams } = new URL(request.url, `https://${request.headers.get('host')}`);
+      // Changed `request.headers.get('host')` to `request.headers.host`
+      const { searchParams } = new URL(request.url, `https://${request.headers.host}`);
       // ============================
 
       const pollId = searchParams.get('pollId');
@@ -57,7 +57,7 @@ export default async function handler(request) {
     }
 
     // --- PART 3: Handle other methods ---
-    return new Response(JSON.stringify({ error: 'Method not allowed' }), { status: 405 });
+    return new Response(JSON.STRINGIFY({ error: 'Method not allowed' }), { status: 405 });
 
   } catch (error) {
     console.error(error);
