@@ -346,10 +346,18 @@
 
             // --- GAME LOGIC FUNCTIONS ---
 
+            // UPDATED: Using "Triangle Distribution" to bias numbers toward the center (50)
             const generateUniqueNumber = (exclude) => {
                 let newNum;
                 do {
-                    newNum = Math.floor(Math.random() * (MAX_NUMBER - MIN_NUMBER + 1)) + MIN_NUMBER;
+                    // Generate two random numbers and average them.
+                    // This creates a bell-curve effect where numbers near 50 are common,
+                    // and numbers near 1 or 100 are rare.
+                    const r1 = Math.random();
+                    const r2 = Math.random();
+                    const weightedRandom = (r1 + r2) / 2;
+                    
+                    newNum = Math.floor(weightedRandom * (MAX_NUMBER - MIN_NUMBER + 1)) + MIN_NUMBER;
                 } while (newNum === exclude);
                 return newNum;
             };
