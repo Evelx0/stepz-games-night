@@ -280,18 +280,9 @@ function loadNewRound() {
         }
     );
 
-    // Add a check to ensure the location is navigable
-    const linksListener = streetView.addListener('links_changed', () => {
-        // Use a timeout to give the panorama a moment to stabilize
-        setTimeout(() => {
-            if (streetView.getLinks().length === 0) {
-                console.log("Stuck in a photo sphere, automatically skipping...");
-                handleSkip();
-            }
-            // Once checked, remove the listener to avoid re-triggering
-            google.maps.event.removeListener(linksListener);
-        }, 1500); // 1.5 second delay
-    });
+    // REMOVED: The automatic skip check.
+    // Now, if players are stuck in a photo sphere (no links), they stay there.
+    // They must use the manual 'Skip Location' button if they want to move on.
 
     guessBtn.disabled = false;
     skipBtn.disabled = false;
@@ -455,5 +446,3 @@ document.head.appendChild(script);
 </script>
 </body>
 </html>
-
-
