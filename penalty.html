@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penalty Shootout - STEPZ DEBATES</title>
+    <style>
+        /* --- FONTS --- */
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Roboto+Condensed:wght@700&display=swap');
+
+        /* --- VARIABLES --- */
+        :root {
+            --bg-color: #0f0f0f;
+            --gold-accent: #d4af37;
+            --primary-red: #c41e3a;
+            --grass-green: #2d5a27;
+            --text-white: #ffffff;
+            --font-display: 'Cinzel', serif;
+            --font-ui: 'Roboto Condensed', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-ui);
+            background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
+            color: var(--text-white);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 900px;
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid var(--gold-accent);
+            border-radius: 20px;
+            padding: 20px;
+            position: relative;
+            box-shadow: 0 0 50px rgba(212, 175, 55, 0.15);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* --- HEADER --- */
+        .header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 10px;
+            width: 100%;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+            padding-bottom: 10px;
+        }
+
+        .logo {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            margin-bottom: 10px;
+            border: 3px solid var(--gold-accent);
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+            object-fit: cover;
+        }
+
+        .header h1 {
+            font-family: var(--font-display);
+            font-size: 1.8rem;
+            color: var(--gold-accent);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin: 0;
+        }
+
+        /* --- SCOREBOARD --- */
+        .scoreboard {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            border: 1px solid #333;
+        }
+
+        .streak-box span { color: var(--primary-red); font-weight: bold; }
+        .multiplier-box span { color: #28a745; font-weight: bold; }
+
+        /* --- PITCH AREA --- */
+        .pitch-container {
+            width: 100%;
+            height: 400px;
+            position: relative;
+            background: linear-gradient(to bottom, #1e3c1b 0%, #2d5a27 40%, #3a7532 100%);
+            border: 2px solid #555;
+            border-radius: 10px;
+            overflow: hidden;
+            perspective: 1000px; /* 3D effect */
+            display: flex;
+            justify-content: center;
+        }
+
+        /* --- THE GOAL --- */
+        .goal-post {
+            position: absolute;
+            top: 50px;
+            width: 60%;
+            height: 180px;
+            border: 8px solid #ddd;
+            border-bottom: none;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            z-index: 5;
+        }
+
+        .goal-net {
+            position: absolute;
+            top: 8px; left: 8px; right: 8px; bottom: 0;
+            background-image: radial-gradient(#fff 1px, transparent 1px);
+            background-size: 10px 10px;
+            opacity: 0.3;
+            z-index: -1;
+        }
+
+        /* --- TARGET ZONES --- */
+        .target-zone {
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: background 0.2s;
+        }
+
+        .target-zone:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Target Indicators (Bullseyes) */
+        .target-icon {
+            width: 30px;
+            height: 30px;
+            border: 2px solid rgba(255,255,255,0.5);
+            border-radius: 50%;
+            position: relative;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+        .target-icon::after {
+            content: ''; position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 6px; height: 6px; background: rgba(255,255,255,0.8);
+            border-radius: 50%;
+        }
+
+        /* Mapping Grid Areas */
+        /* Top Row */
+        .zone-tl { border-right: 1px dashed rgba(255,255,255,0.1); border-bottom: 1px dashed rgba(255,255,255,0.1); }
+        .zone-tm { border-right: 1px dashed rgba(255,255,255,0.1); border-bottom: 1px dashed rgba(255,255,255,0.1); }
+        .zone-tr { border-bottom: 1px dashed rgba(255,255,255,0.1); }
+        /* Bottom Row */
+        .zone-bl { border-right: 1px dashed rgba(255,255,255,0.1); }
+        .zone-bm { border-right: 1px dashed rgba(255,255,255,0.1); }
+        .zone-br { }
+
+
+        /* --- GOALKEEPER --- */
+        .goalkeeper {
+            width: 60px;
+            height: 90px;
+            background: var(--primary-red);
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%); /* Center by default */
+            border-radius: 10px 10px 0 0;
+            border: 2px solid #fff;
+            box-shadow: 0 0 15px rgba(0,0,0,0.5);
+            transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+            z-index: 10;
+        }
+        
+        .goalkeeper-gloves {
+            position: absolute; width: 80px; height: 20px;
+            background: #fff; top: 30px; left: -10px;
+            border-radius: 10px;
+        }
+
+        /* --- BALL --- */
+        .ball-container {
+            position: absolute;
+            bottom: 50px;
+            left: 50%;
+            transform: translateX(-50%); /* Center by default */
+            width: 40px;
+            height: 40px;
+            z-index: 20;
+            transition: all 0.6s cubic-bezier(0.1, 0.7, 1.0, 0.1);
+        }
+
+        .ball {
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 30% 30%, #fff, #ddd, #333);
+            border-radius: 50%;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+        }
+
+        /* Shot Animations */
+        .ball-container.shoot {
+            /* Uses CSS Variables set by JS */
+            transform: translate(var(--tx), var(--ty)) scale(0.6); 
+        }
+
+        .goalkeeper.dive {
+            transform: translate(var(--gx), var(--gy)) rotate(var(--gr));
+        }
+
+        /* --- OVERLAYS --- */
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden; transition: all 0.3s;
+            z-index: 100;
+            backdrop-filter: blur(5px);
+            border-radius: 18px;
+        }
+        .overlay.active { opacity: 1; visibility: visible; }
+
+        .overlay h2 {
+            font-family: var(--font-display);
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px currentColor;
+        }
+
+        .win-text { color: #28a745; }
+        .lose-text { color: var(--primary-red); }
+
+        .btn-restart {
+            background: var(--gold-accent);
+            color: #000;
+            border: none; border-radius: 5px; padding: 15px 40px;
+            font-weight: bold; cursor: pointer; font-size: 1.2rem;
+            margin-top: 20px;
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+        }
+        .btn-restart:hover { transform: scale(1.05); }
+
+        .message-box {
+            position: absolute;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-family: var(--font-display);
+            font-size: 4rem;
+            color: #fff;
+            text-shadow: 0 0 20px #000;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 50;
+            transition: opacity 0.2s;
+        }
+        .message-box.show { opacity: 1; }
+        .msg-goal { color: #28a745; }
+        .msg-saved { color: var(--primary-red); }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        
+        <header class="header">
+            <img src="logo.jpeg" alt="STEPZ Logo" class="logo">
+            <h1>Penalty Shootout</h1>
+        </header>
+
+        <div class="scoreboard">
+            <div class="streak-box">STREAK: <span id="streak-val">0</span></div>
+            <div class="multiplier-box">MULTIPLIER: <span id="mult-val">1.00x</span></div>
+        </div>
+
+        <div class="pitch-container">
+            
+            <div class="goal-post">
+                <div class="goal-net"></div>
+                <div class="target-zone zone-tl" data-x="-120px" data-y="-120px" data-gx="-80px" data-gy="-30px" data-gr="-15deg"><div class="target-icon"></div></div>
+                <div class="target-zone zone-tm" data-x="0px" data-y="-120px" data-gx="0px" data-gy="-40px" data-gr="0deg"><div class="target-icon"></div></div>
+                <div class="target-zone zone-tr" data-x="120px" data-y="-120px" data-gx="80px" data-gy="-30px" data-gr="15deg"><div class="target-icon"></div></div>
+                
+                <div class="target-zone zone-bl" data-x="-120px" data-y="-30px" data-gx="-90px" data-gy="20px" data-gr="-80deg"><div class="target-icon"></div></div>
+                <div class="target-zone zone-bm" data-x="0px" data-y="-30px" data-gx="0px" data-gy="10px" data-gr="0deg"><div class="target-icon"></div></div>
+                <div class="target-zone zone-br" data-x="120px" data-y="-30px" data-gx="90px" data-gy="20px" data-gr="80deg"><div class="target-icon"></div></div>
+            </div>
+
+            <div class="goalkeeper" id="keeper">
+                <div class="goalkeeper-gloves"></div>
+            </div>
+
+            <div class="ball-container" id="ball-cont">
+                <div class="ball"></div>
+            </div>
+
+            <div class="message-box" id="msg-box">GOAL!</div>
+
+        </div>
+
+        <div class="overlay" id="result-overlay">
+            <h2 id="result-title">SAVED!</h2>
+            <p id="result-message">The Stepz Keeper read your mind.</p>
+            <p style="font-size: 1.5rem; color: #fff; margin-top: 10px;">Final Streak: <span id="final-streak">0</span></p>
+            <button class="btn-restart" id="restart-btn">SHOOT AGAIN</button>
+        </div>
+
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    // --- ELEMENTS ---
+    const zones = document.querySelectorAll('.target-zone');
+    const ballContainer = document.getElementById('ball-cont');
+    const keeper = document.getElementById('keeper');
+    const streakDisplay = document.getElementById('streak-val');
+    const multDisplay = document.getElementById('mult-val');
+    const msgBox = document.getElementById('msg-box');
+    
+    const overlay = document.getElementById('result-overlay');
+    const restartBtn = document.getElementById('restart-btn');
+    const resultTitle = document.getElementById('result-title');
+    const finalStreakDisplay = document.getElementById('final-streak');
+
+    // --- STATE ---
+    let streak = 0;
+    let multiplier = 1.0;
+    let isShooting = false;
+
+    // --- LOGIC ---
+
+    function resetGame() {
+        streak = 0;
+        multiplier = 1.0;
+        updateScoreboard();
+        overlay.classList.remove('active');
+        resetPositions();
+    }
+
+    function resetPositions() {
+        // --- FIX: CLEAR INLINE STYLES TO FIX BREAKING ANIMATION ---
+        
+        // 1. Stop transitions instantly to prevent "flying back" animation
+        ballContainer.style.transition = 'none';
+        keeper.style.transition = 'none';
+
+        // 2. Remove the classes that trigger movement
+        ballContainer.classList.remove('shoot');
+        keeper.classList.remove('dive');
+
+        // 3. IMPORTANT: Clear the inline transform properties that trapped the ball
+        ballContainer.style.removeProperty('transform');
+        ballContainer.style.removeProperty('--tx');
+        ballContainer.style.removeProperty('--ty');
+
+        keeper.style.removeProperty('transform');
+        keeper.style.removeProperty('--gx');
+        keeper.style.removeProperty('--gy');
+        keeper.style.removeProperty('--gr');
+
+        // 4. Force browser reflow (the "flush" to ensure styles reset)
+        void ballContainer.offsetWidth; 
+
+        // 5. Restore transitions for the next shot
+        ballContainer.style.transition = 'all 0.6s cubic-bezier(0.1, 0.7, 1.0, 0.1)';
+        keeper.style.transition = 'all 0.4s cubic-bezier(0.25, 1, 0.5, 1)';
+        
+        isShooting = false;
+    }
+
+    function updateScoreboard() {
+        streakDisplay.textContent = streak;
+        multDisplay.textContent = multiplier.toFixed(2) + 'x';
+    }
+
+    function handleShoot(e) {
+        if (isShooting) return;
+        isShooting = true;
+
+        const zone = e.currentTarget;
+        
+        // 1. Get Coordinates
+        const tx = zone.dataset.x; 
+        const ty = zone.dataset.y; 
+
+        // 2. Set CSS Vars for Animation
+        ballContainer.style.setProperty('--tx', `calc(-50% + ${tx})`);
+        ballContainer.style.setProperty('--ty', ty);
+        
+        // 3. Determine Outcome
+        // Difficulty ramps up slightly with streak
+        const difficulty = Math.min(streak * 0.05, 0.4);
+        const winChance = 0.7 - difficulty; 
+        const isGoal = Math.random() < winChance;
+
+        // 4. Keeper Move
+        if (isGoal) {
+            // Keeper guesses wrong (random other zone)
+            const allZones = Array.from(zones);
+            const otherZones = allZones.filter(z => z !== zone);
+            const wrongZone = otherZones[Math.floor(Math.random() * otherZones.length)];
+            
+            keeper.style.setProperty('--gx', `calc(-50% + ${wrongZone.dataset.gx})`);
+            keeper.style.setProperty('--gy', wrongZone.dataset.gy);
+            keeper.style.setProperty('--gr', wrongZone.dataset.gr);
+        } else {
+            // Keeper saves (Dives correctly)
+            keeper.style.setProperty('--gx', `calc(-50% + ${zone.dataset.gx})`);
+            keeper.style.setProperty('--gy', zone.dataset.gy);
+            keeper.style.setProperty('--gr', zone.dataset.gr);
+        }
+
+        // 5. Trigger Animation
+        ballContainer.classList.add('shoot');
+        setTimeout(() => keeper.classList.add('dive'), 100);
+
+        // 6. Handle Result
+        setTimeout(() => {
+            if (isGoal) {
+                // Win
+                streak++;
+                multiplier += 0.14; // --- FIX: Slower Multiplier (approx 7 goals for 2.0x) ---
+                updateScoreboard();
+                
+                msgBox.textContent = "GOAL!";
+                msgBox.className = "message-box show msg-goal";
+                
+                setTimeout(() => {
+                    msgBox.classList.remove('show');
+                    resetPositions();
+                }, 1500);
+
+            } else {
+                // Loss
+                msgBox.textContent = "SAVED!";
+                msgBox.className = "message-box show msg-saved";
+                
+                setTimeout(() => {
+                    endGame();
+                }, 1000);
+            }
+        }, 600); 
+    }
+
+    function endGame() {
+        resultTitle.textContent = "SAVED!";
+        resultTitle.className = "lose-text";
+        finalStreakDisplay.textContent = streak;
+        overlay.classList.add('active');
+    }
+
+    // --- LISTENERS ---
+    zones.forEach(z => z.addEventListener('click', handleShoot));
+    restartBtn.addEventListener('click', resetGame);
+
+});
+</script>
+</body>
+</html>
