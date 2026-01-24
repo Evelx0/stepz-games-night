@@ -57,11 +57,15 @@
             font-size: 4rem;
             margin-bottom: 10px;
             min-height: 70px;
+            word-wrap: break-word; /* Ensures emojis wrap on small screens */
+            line-height: 1.2;
         }
         #category-display {
             font-size: 1.1rem;
             color: var(--text-muted);
             font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .answer-area {
@@ -139,19 +143,55 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     // --- RIDDLE DATABASE ---
-    // Add your own riddles here
+    // Expanded with verified modern pop culture & idioms
     const RIDDLES = [
+        // --- MOVIES ---
         { category: 'Movie', emojis: '🕷️👨➡️🕷️🌌', answer: 'Spider-Man: Into the Spider-Verse' },
         { category: 'Movie', emojis: '🦁👑', answer: 'The Lion King' },
-        { category: 'Movie', emojis: 'finding nemo', answer: 'Finding Nemo' },
-        { category: 'Movie', emojis: '🏎️💨😡', answer: 'Fast & Furious' },
+        { category: 'Movie', emojis: '🔎🐠', answer: 'Finding Nemo' }, // Fixed
+        { category: 'Movie', emojis: '🚗💨😡', answer: 'Fast & Furious' },
+        { category: 'Movie', emojis: '🦇👨', answer: 'The Batman' },
+        { category: 'Movie', emojis: '👱‍♀️💅🎀🏠', answer: 'Barbie' },
+        { category: 'Movie', emojis: '💣👨🎩🔥', answer: 'Oppenheimer' },
+        { category: 'Movie', emojis: '🐼🥋', answer: 'Kung Fu Panda' },
+        { category: 'Movie', emojis: '🚢🧊💑', answer: 'Titanic' },
+        { category: 'Movie', emojis: '🦖🦕🏝️', answer: 'Jurassic Park' },
+        { category: 'Movie', emojis: '🧙‍♂️💍🌋', answer: 'Lord of the Rings' },
+        { category: 'Movie', emojis: '👻🚫', answer: 'Ghostbusters' },
+        { category: 'Movie', emojis: '🎩🍫🎫🏭', answer: 'Charlie and the Chocolate Factory' },
+        { category: 'Movie', emojis: '🐀👨‍🍳🍲', answer: 'Ratatouille' },
+        { category: 'Movie', emojis: '👽🚲👉👈', answer: 'E.T.' },
+
+        // --- SONGS ---
+        { category: 'Song', emojis: '☂️💜', answer: 'Purple Rain (Prince)' },
+        { category: 'Song', emojis: '🕺🐒', answer: 'Dance Monkey (Tones and I)' },
+        { category: 'Song', emojis: '💐🌹🧍‍♀️', answer: 'Flowers (Miley Cyrus)' },
+        { category: 'Song', emojis: '🧛‍♀️🩸', answer: 'Vampire (Olivia Rodrigo)' },
+        { category: 'Song', emojis: '🚗🎫', answer: 'Drivers License (Olivia Rodrigo)' },
+        { category: 'Song', emojis: '🌪️🏠👠👠', answer: 'Somewhere Over The Rainbow' },
+        { category: 'Song', emojis: '👋🌌', answer: 'Hello (Adele)' },
+        { category: 'Song', emojis: '🤕❤️', answer: 'Blinding Lights (The Weeknd)' },
+        { category: 'Song', emojis: '🥊🐯👁️', answer: 'Eye of the Tiger' },
+        { category: 'Song', emojis: '🤠🐎🛣️', answer: 'Old Town Road' },
+
+        // --- IDIOMS / PHRASES ---
         { category: 'Phrase', emojis: '💥🤝🧠', answer: 'A meeting of minds' },
         { category: 'Phrase', emojis: '🗣️😈', answer: 'Speak of the devil' },
-        { category: 'Song', emojis: '☂️💜', answer: 'Purple Rain' },
-        { category: 'Song', emojis: '🕺🐒', answer: 'Dance Monkey' },
-        { category: 'Movie', emojis: '🦇👨‍🦱', answer: 'The Batman' },
         { category: 'Phrase', emojis: '🍎👀', answer: 'Apple of my eye' },
+        { category: 'Phrase', emojis: '🌧️🐱🐶', answer: 'Raining cats and dogs' },
+        { category: 'Phrase', emojis: '🥶❄️🧊', answer: 'Break the ice' },
+        { category: 'Phrase', emojis: '🐖✈️', answer: 'When pigs fly' },
+        { category: 'Phrase', emojis: '🤐🔒', answer: 'Zip your lip' },
+        { category: 'Phrase', emojis: '🍰🤏', answer: 'Piece of cake' },
+        { category: 'Phrase', emojis: '👀🫘', answer: 'Spill the beans' },
+        { category: 'Phrase', emojis: '🔥🥔', answer: 'Hot potato' },
+        { category: 'Phrase', emojis: '🌙🔵', answer: 'Once in a blue moon' },
+        { category: 'Phrase', emojis: '🛌🪵', answer: 'Sleep like a log' },
+        { category: 'Phrase', emojis: '💰🦵💪', answer: 'Cost an arm and a leg' },
+        { category: 'Phrase', emojis: '🐊💧', answer: 'Crocodile tears' },
+        { category: 'Phrase', emojis: '🐺🐏👔', answer: 'Wolf in sheep\'s clothing' }
     ];
+
     let currentRiddle = null;
     let lastRiddleIndex = -1;
 
@@ -172,9 +212,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Select a new random riddle
         let riddleIndex;
-        do {
-            riddleIndex = Math.floor(Math.random() * RIDDLES.length);
-        } while (RIDDLES.length > 1 && riddleIndex === lastRiddleIndex);
+        // Basic check to avoid same riddle twice in a row
+        // Also handling edge case if array is small
+        if (RIDDLES.length > 1) {
+            do {
+                riddleIndex = Math.floor(Math.random() * RIDDLES.length);
+            } while (riddleIndex === lastRiddleIndex);
+        } else {
+            riddleIndex = 0;
+        }
+
         lastRiddleIndex = riddleIndex;
         currentRiddle = RIDDLES[riddleIndex];
 
