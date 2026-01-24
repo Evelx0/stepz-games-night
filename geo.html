@@ -69,24 +69,46 @@
         
         .map-container {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.8); z-index: 20; padding: 20px;
+            background-color: rgba(0,0,0,0.9); z-index: 20; padding: 20px;
             flex-direction: column; justify-content: center; align-items: center;
         }
         .map-container.active { display: flex; }
-        #map { width: 100%; max-width: 90vw; height: 80vh; border-radius: var(--border-radius); }
+        
+        /* Map Content Wrapper to hold sidebar */
+        .map-content-wrapper {
+            display: flex; width: 100%; max-width: 90vw; height: 80vh; gap: 20px;
+        }
+        
+        #map { flex: 3; border-radius: var(--border-radius); height: 100%; }
+        
+        /* New Status Panel inside Map View */
+        .map-sidebar {
+            flex: 1; background: var(--card-color); border-radius: var(--border-radius); padding: 20px;
+            display: flex; flex-direction: column; min-width: 250px; border: 1px solid rgba(255,255,255,0.1);
+        }
+        .map-sidebar h3 { color: var(--text-muted); margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        #guess-status-list { list-style: none; text-align: left; flex-grow: 1; overflow-y: auto; }
+        #guess-status-list li { 
+            padding: 10px; margin-bottom: 8px; background: rgba(255,255,255,0.05); 
+            border-radius: 6px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .status-icon { font-size: 1.2rem; }
+        .status-locked { color: var(--success-color); }
+        .status-waiting { color: var(--text-muted); opacity: 0.5; }
+
         .map-controls {
             margin-top: 15px; display: flex; gap: 10px; align-items: center; background-color: var(--card-color);
-            padding: 10px; border-radius: var(--border-radius);
+            padding: 15px; border-radius: var(--border-radius); width: 100%; max-width: 90vw; justify-content: center;
         }
         #player-name-input {
-            padding: 10px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2);
-            background-color: #2a2a2a; color: white; font-size: 1rem;
+            padding: 12px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.2);
+            background-color: #2a2a2a; color: white; font-size: 1rem; width: 200px;
         }
         
         .controls { display: flex; justify-content: center; gap: 15px; }
         .btn {
             border: none; border-radius: 8px; padding: 15px 30px;
-            font-size: 1.2rem; font-weight: 600; cursor: pointer;
+            font-size: 1.1rem; font-weight: 600; cursor: pointer;
             transition: all 0.2s ease;
             color: white;
         }
@@ -94,6 +116,7 @@
         .btn-primary { background-color: var(--primary-accent); }
         .btn-success { background-color: var(--success-color); }
         .btn-secondary { background-color: #6c757d; }
+        .btn-info { background-color: #17a2b8; }
         
         .overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -147,11 +170,24 @@
         </div>
         
         <div class="map-container" id="map-container">
-            <div id="map"></div>
+            <div class="map-content-wrapper">
+                <div id="map"></div>
+                
+                <div class="map-sidebar">
+                    <h3>Guess Status</h3>
+                    <ul id="guess-status-list">
+                        </ul>
+                    <div style="margin-top: auto; font-size: 0.9rem; color: #888;">
+                        Click map to place pin.<br>Type name to lock in.
+                    </div>
+                </div>
+            </div>
+
             <div class="map-controls">
-                <input type="text" id="player-name-input" placeholder="Enter your name">
+                <button class="btn btn-info" id="close-map-btn">Back to Street View</button>
+                <div style="width: 20px;"></div> <input type="text" id="player-name-input" placeholder="Enter Player Name">
                 <button class="btn btn-success" id="confirm-guess-btn" disabled>Lock In Guess</button>
-                <button class="btn btn-secondary" id="finish-round-btn">Finish & Reveal</button>
+                <div style="width: 20px;"></div> <button class="btn btn-secondary" id="finish-round-btn">Finish Round</button>
             </div>
         </div>
 
@@ -180,20 +216,67 @@
 <script>
 const API_KEY = "AIzaSyCJVtv_FyJOP6OsOXZvnqwdVfD1uiYVL7A";
 
-// --- LOCATION DATABASE ---
+// --- DIVERSE LOCATION DATABASE (Africa, Asia, SA, Remote) ---
 const locations = [
-    {lat: 51.5007, lng: -0.1246}, {lat: 40.6892, lng: -74.0445}, {lat: 48.8584, lng: 2.2945}, {lat: 35.6586, lng: 139.7454},
-    {lat: -33.8568, lng: 151.2153}, {lat: 53.4631, lng: -2.2913}, {lat: 34.1341, lng: -118.3215}, {lat: -22.9519, lng: -43.2105},
-    {lat: 30.3285, lng: 35.4444}, {lat: 27.1751, lng: 78.0421}, {lat: 41.8902, lng: 12.4922}, {lat: -13.1631, lng: -72.5450},
-    {lat: 37.9715, lng: 23.7257}, {lat: 55.7522, lng: 37.6156}, {lat: 6.4550, lng: 3.3841}, {lat: 1.3521, lng: 103.8198},
-    {lat: 64.1466, lng: -21.9426}, {lat: 19.4326, lng: -99.1332}, {lat: -34.6037, lng: -58.3816}, {lat: -41.2865, lng: 174.7762}
+    // --- AFRICA ---
+    {lat: -33.9249, lng: 18.4241}, // Cape Town, South Africa
+    {lat: 14.6928, lng: -17.4467}, // Dakar, Senegal
+    {lat: 5.6037, lng: -0.1870},   // Accra, Ghana
+    {lat: -1.2921, lng: 36.8219},  // Nairobi, Kenya
+    {lat: 36.8065, lng: 10.1815},  // Tunis, Tunisia
+    {lat: -24.6282, lng: 25.9231}, // Gaborone, Botswana
+    {lat: -1.9441, lng: 30.0619},  // Kigali, Rwanda
+    {lat: -26.2041, lng: 28.0473}, // Johannesburg, South Africa
+    {lat: -18.8792, lng: 47.5079}, // Antananarivo, Madagascar
+
+    // --- ASIA ---
+    {lat: 47.9188, lng: 106.9176}, // Ulaanbaatar, Mongolia
+    {lat: 42.8746, lng: 74.5698},  // Bishkek, Kyrgyzstan
+    {lat: 6.9271, lng: 79.8612},   // Colombo, Sri Lanka
+    {lat: 23.5900, lng: 119.5300}, // Penghu Islands, Taiwan
+    {lat: 35.6528, lng: 139.8395}, // Tokyo, Japan (Bay area)
+    {lat: 11.5564, lng: 104.9282}, // Phnom Penh, Cambodia
+    {lat: 27.4728, lng: 89.6393},  // Thimphu, Bhutan
+    {lat: 31.6280, lng: 74.8765},  // Amritsar, India
+
+    // --- SOUTH AMERICA ---
+    {lat: -16.4897, lng: -68.1193}, // La Paz, Bolivia
+    {lat: -34.9011, lng: -56.1645}, // Montevideo, Uruguay
+    {lat: 4.7110, lng: -74.0721},   // Bogota, Colombia
+    {lat: -13.5320, lng: -71.9675}, // Cusco, Peru
+    {lat: -54.8019, lng: -68.3030}, // Ushuaia, Argentina (End of the world)
+    {lat: -0.2299, lng: -78.5249},  // Quito, Ecuador
+
+    // --- EUROPE (Less Common) ---
+    {lat: 64.1466, lng: -21.9426}, // Reykjavik, Iceland
+    {lat: 42.2357, lng: 18.9329},  // Kotor, Montenegro
+    {lat: 59.4370, lng: 24.7536},  // Tallinn, Estonia
+    {lat: 35.8989, lng: 14.5146},  // Valletta, Malta
+    {lat: 62.0084, lng: -6.7723},  // Faroe Islands
+
+    // --- OCEANIA & REMOTE ---
+    {lat: -43.5321, lng: 172.6362}, // Christchurch, New Zealand
+    {lat: 13.4443, lng: 144.7937},  // Guam
+    {lat: -21.1784, lng: -175.1979}, // Nuku'alofa, Tonga
+    {lat: -12.4634, lng: 130.8456}, // Darwin, Australia
+
+    // --- NORTH AMERICA ---
+    {lat: 64.8378, lng: -147.7164}, // Fairbanks, Alaska
+    {lat: 19.2465, lng: -103.7272}, // Colima, Mexico
+    {lat: 47.5556, lng: -52.7484},  // St. John's, Canada
+    
+    // --- CLASSICS (For balance) ---
+    {lat: 51.5074, lng: -0.1278},   // London, UK
+    {lat: 40.7128, lng: -74.0060},  // NYC, USA
+    {lat: 48.8566, lng: 2.3522},    // Paris, France
+    {lat: -33.8688, lng: 151.2093}  // Sydney, Australia
 ];
+
 let usedLocations = [], players = {}, roundGuesses = [], currentTargetLocation, currentRound;
 const TOTAL_ROUNDS = 5;
 
-let map, streetView, guessMarker, guessBtn, skipBtn, mapContainer, confirmGuessBtn, finishRoundBtn, startOverlay, startBtn, resultOverlay, nextRoundBtn, roundDisplay, playersList, playerAddForm, newPlayerNameInput, addedPlayersList, playerNameInput;
+let map, streetView, guessMarker, guessBtn, skipBtn, mapContainer, confirmGuessBtn, finishRoundBtn, startOverlay, startBtn, resultOverlay, nextRoundBtn, roundDisplay, playersList, playerAddForm, newPlayerNameInput, addedPlayersList, playerNameInput, closeMapBtn, guessStatusList;
 
-// This function will be called by the Google Maps script once it's loaded
 function initializeGame() {
     // DOM bindings
     guessBtn = document.getElementById('guess-btn');
@@ -201,12 +284,14 @@ function initializeGame() {
     mapContainer = document.getElementById('map-container');
     confirmGuessBtn = document.getElementById('confirm-guess-btn');
     finishRoundBtn = document.getElementById('finish-round-btn');
+    closeMapBtn = document.getElementById('close-map-btn');
     startOverlay = document.getElementById('start-overlay');
     startBtn = document.getElementById('start-btn');
     resultOverlay = document.getElementById('result-overlay');
     nextRoundBtn = document.getElementById('next-round-btn');
     roundDisplay = document.getElementById('round-display');
     playersList = document.getElementById('players-list');
+    guessStatusList = document.getElementById('guess-status-list');
     playerAddForm = document.getElementById('player-add-form');
     newPlayerNameInput = document.getElementById('new-player-name');
     addedPlayersList = document.getElementById('added-players-list');
@@ -216,6 +301,7 @@ function initializeGame() {
     playerAddForm.addEventListener('submit', addPlayer);
     startBtn.addEventListener('click', startGame);
     guessBtn.addEventListener('click', openMap);
+    closeMapBtn.addEventListener('click', closeMap);
     skipBtn.addEventListener('click', handleSkip);
     confirmGuessBtn.addEventListener('click', lockInGuess);
     finishRoundBtn.addEventListener('click', finishRound);
@@ -245,7 +331,6 @@ function addPlayer(e) {
 function startGame() {
     currentRound = 0;
     usedLocations = [];
-    // Reset scores
     for (const name in players) {
         players[name] = 0;
     }
@@ -272,17 +357,13 @@ function loadNewRound() {
         document.getElementById('streetview'), {
             position: currentTargetLocation, pov: { heading: 165, pitch: 0 }, zoom: 1,
             addressControl: false, 
-            linksControl: true, // Allows street navigation
+            linksControl: true,
             panControl: true, 
             enableCloseButton: false,
-            zoomControl: false, // Disables zooming
-            fullscreenControl: false // Disables fullscreen button
+            zoomControl: false,
+            fullscreenControl: false
         }
     );
-
-    // REMOVED: The automatic skip check.
-    // Now, if players are stuck in a photo sphere (no links), they stay there.
-    // They must use the manual 'Skip Location' button if they want to move on.
 
     guessBtn.disabled = false;
     skipBtn.disabled = false;
@@ -290,20 +371,55 @@ function loadNewRound() {
 
 function openMap() {
     mapContainer.classList.add('active');
-    confirmGuessBtn.disabled = true;
-    skipBtn.disabled = true;
+    updateGuessStatusUI(); // Show who has guessed
     playerNameInput.value = '';
-    if (guessMarker) guessMarker.setMap(null);
-    map = new google.maps.Map(document.getElementById('map'), {
-        center: { lat: 20, lng: 0 }, zoom: 2,
-        streetViewControl: false, mapTypeControl: false
+    
+    // Don't reset map if already open in background, but we need to ensure it renders correctly on display block
+    if (!map) {
+        map = new google.maps.Map(document.getElementById('map'), {
+            center: { lat: 20, lng: 0 }, zoom: 2,
+            streetViewControl: false, mapTypeControl: false
+        });
+        map.addListener('click', (e) => placeMarker(e.latLng));
+    }
+    
+    // Reset marker for new entry (unless we want to persist between open/close? No, cleaner to reset for next person)
+    if (guessMarker) {
+        guessMarker.setMap(null);
+        guessMarker = null;
+    }
+    confirmGuessBtn.disabled = true;
+}
+
+function closeMap() {
+    mapContainer.classList.remove('active');
+    // We don't clear guesses, just hide the UI so people can check street view again
+}
+
+function updateGuessStatusUI() {
+    guessStatusList.innerHTML = '';
+    const allPlayers = Object.keys(players);
+    const lockedPlayers = roundGuesses.map(g => g.name);
+    
+    allPlayers.forEach(name => {
+        const hasGuessed = lockedPlayers.includes(name);
+        const li = document.createElement('li');
+        
+        const nameSpan = document.createElement('span');
+        nameSpan.textContent = name;
+        
+        const iconSpan = document.createElement('span');
+        iconSpan.className = 'status-icon ' + (hasGuessed ? 'status-locked' : 'status-waiting');
+        iconSpan.textContent = hasGuessed ? '✅' : '⏳';
+        
+        li.appendChild(nameSpan);
+        li.appendChild(iconSpan);
+        guessStatusList.appendChild(li);
     });
-    map.addListener('click', (e) => placeMarker(e.latLng));
 }
 
 function handleSkip() {
     if (currentRound >= TOTAL_ROUNDS) {
-        // If it's the last round and they skip, just end the game.
         finishRound();
     } else {
         loadNewRound();
@@ -326,7 +442,9 @@ function lockInGuess() {
     if (roundGuesses.some(g => g.name === playerName)) { alert(`${playerName} has already guessed this round.`); return; }
     
     roundGuesses.push({ name: playerName, guess: guessMarker.getPosition() });
-    alert(`${playerName}'s guess locked in!`);
+    
+    // Visual feedback
+    updateGuessStatusUI();
     
     playerNameInput.value = '';
     guessMarker.setMap(null);
