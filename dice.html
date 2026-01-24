@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poker Dice - STEPZ DEBATES</title>
+    <style>
+        /* --- FONTS --- */
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&family=Roboto+Condensed:wght@700&display=swap');
+
+        /* --- VARIABLES --- */
+        :root {
+            --bg-color: #0f0f0f;
+            --felt-color: #0e1a0e;
+            --gold-accent: #d4af37;
+            --primary-red: #c41e3a;
+            --text-white: #ffffff;
+            --dice-white: #f0f0f0;
+            --dice-dot: #111;
+            --font-display: 'Cinzel', serif;
+            --font-ui: 'Roboto Condensed', sans-serif;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: var(--font-ui);
+            background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%);
+            color: var(--text-white);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .game-container {
+            width: 100%;
+            max-width: 800px;
+            background: rgba(0, 0, 0, 0.85);
+            border: 2px solid var(--gold-accent);
+            border-radius: 20px;
+            padding: 30px;
+            position: relative;
+            box-shadow: 0 0 50px rgba(212, 175, 55, 0.15);
+            text-align: center;
+        }
+
+        /* --- HEADER & LOGO --- */
+        .header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+            border-bottom: 1px solid var(--gold-accent);
+            padding-bottom: 20px;
+        }
+
+        .logo {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            margin-bottom: 15px;
+            border: 3px solid var(--gold-accent);
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+            object-fit: cover;
+        }
+
+        .header h1 {
+            font-family: var(--font-display);
+            font-size: 2.2rem;
+            color: var(--gold-accent);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 2px 2px 0px #000;
+        }
+
+        /* --- GAME AREA --- */
+        .table-area {
+            background-color: var(--felt-color);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: inset 0 0 30px #000;
+            border: 1px solid #333;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            transition: all 0.3s ease;
+            opacity: 0.5; /* Dimmed by default */
+        }
+        
+        .section.active-turn {
+            opacity: 1;
+            border-color: var(--gold-accent);
+            background: rgba(212, 175, 55, 0.05);
+            box-shadow: 0 0 15px rgba(212, 175, 55, 0.1);
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            color: #888;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 10px;
+        }
+
+        .hand-name {
+            color: var(--gold-accent);
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.5s;
+            text-shadow: 0 0 5px var(--gold-accent);
+        }
+        .hand-name.visible { opacity: 1; }
+
+        /* --- DICE STYLING --- */
+        .dice-container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .die {
+            width: 60px;
+            height: 60px;
+            background: var(--dice-white);
+            border-radius: 10px;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.5);
+            display: grid;
+            grid-template-areas: 
+                "a . c"
+                "e g f"
+                "d . b";
+            padding: 8px;
+            position: relative;
+            transform: scale(1);
+            transition: transform 0.2s;
+        }
+        
+        /* Highlight the die currently rolling */
+        .die.rolling {
+            box-shadow: 0 0 15px var(--primary-red);
+            transform: scale(1.1);
+            z-index: 10;
+        }
+
+        .dot {
+            display: block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--dice-dot);
+            align-self: center;
+            justify-self: center;
+        }
+
+        /* Dot Positions */
+        .dot:nth-child(1) { grid-area: g; } 
+        .dot:nth-child(2) { grid-area: a; } 
+        .dot:nth-child(3) { grid-area: b; } 
+        .dot:nth-child(4) { grid-area: c; } 
+        .dot:nth-child(5) { grid-area: d; } 
+        .dot:nth-child(6) { grid-area: e; } 
+        .dot:nth-child(7) { grid-area: f; } 
+
+        /* Visibility Logic */
+        .die[data-val="1"] .dot:not(:nth-child(1)) { display: none; }
+        .die[data-val="2"] .dot:not(:nth-child(2)):not(:nth-child(3)) { display: none; }
+        .die[data-val="3"] .dot:not(:nth-child(1)):not(:nth-child(2)):not(:nth-child(3)) { display: none; }
+        .die[data-val="4"] .dot:not(:nth-child(2)):not(:nth-child(3)):not(:nth-child(4)):not(:nth-child(5)) { display: none; }
+        .die[data-val="5"] .dot:nth-child(6), .die[data-val="5"] .dot:nth-child(7) { display: none; }
+        .die[data-val="6"] .dot:nth-child(1) { display: none; }
+
+        /* --- CONTROLS --- */
+        .controls { margin-top: 30px; }
+
+        .btn {
+            border: none;
+            border-radius: 8px;
+            padding: 15px 50px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            font-family: var(--font-display);
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            background: var(--primary-red);
+            color: white;
+            border: 2px solid #ff4d6d;
+        }
+
+        .btn:hover:not(:disabled) {
+            transform: scale(1.05);
+            box-shadow: 0 0 20px var(--primary-red);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(100%);
+        }
+
+        /* --- OVERLAYS --- */
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            opacity: 0; visibility: hidden; transition: all 0.4s ease;
+            z-index: 100;
+            border-radius: 20px;
+            backdrop-filter: blur(5px);
+        }
+        .overlay.active { opacity: 1; visibility: visible; }
+
+        .overlay h2 {
+            font-family: var(--font-display);
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 0 0 10px currentColor;
+        }
+
+        .win-text { color: #28a745; }
+        .lose-text { color: var(--primary-red); }
+        .draw-text { color: var(--gold-accent); }
+
+        .overlay p {
+            font-size: 1.5rem;
+            color: #ddd;
+            margin-bottom: 30px;
+            max-width: 80%;
+        }
+
+        .btn-restart {
+            background: var(--gold-accent);
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            padding: 10px 30px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        
+        <header class="header">
+            <img src="logo.jpeg" alt="STEPZ DEBATES Logo" class="logo">
+            <h1>STEPZ DICE ROLLER</h1>
+        </header>
+
+        <div class="table-area">
+            
+            <div class="section active-turn" id="player-section">
+                <div class="section-title">
+                    <span>PANELIST</span>
+                    <span class="hand-name" id="player-hand-name">Ready</span>
+                </div>
+                <div class="dice-container" id="player-dice">
+                    </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px dashed #444; margin: 10px 0;">
+
+            <div class="section" id="house-section">
+                <div class="section-title">
+                    <span>STEPZ</span>
+                    <span class="hand-name" id="house-hand-name">Waiting...</span>
+                </div>
+                <div class="dice-container" id="house-dice">
+                    </div>
+            </div>
+
+        </div>
+
+        <div class="controls">
+            <button class="btn" id="roll-btn">ROLL</button>
+        </div>
+
+        <div class="overlay" id="result-overlay">
+            <h2 id="result-title"></h2>
+            <p id="result-message"></p>
+            <button class="btn-restart" id="restart-btn">PLAY AGAIN</button>
+        </div>
+
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    // --- ELEMENTS ---
+    const playerSection = document.getElementById('player-section');
+    const houseSection = document.getElementById('house-section');
+    const playerDiceContainer = document.getElementById('player-dice');
+    const houseDiceContainer = document.getElementById('house-dice');
+    const playerHandLabel = document.getElementById('player-hand-name');
+    const houseHandLabel = document.getElementById('house-hand-name');
+    const rollBtn = document.getElementById('roll-btn');
+    const overlay = document.getElementById('result-overlay');
+    const resultTitle = document.getElementById('result-title');
+    const resultMsg = document.getElementById('result-message');
+    const restartBtn = document.getElementById('restart-btn');
+
+    // --- HELPERS ---
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+    const randomFace = () => Math.floor(Math.random() * 6) + 1;
+
+    // --- SETUP ---
+    function createDieHTML(val = 1) {
+        return `
+            <div class="die" data-val="${val}">
+                <span class="dot"></span><span class="dot"></span>
+                <span class="dot"></span><span class="dot"></span>
+                <span class="dot"></span><span class="dot"></span>
+                <span class="dot"></span>
+            </div>
+        `;
+    }
+
+    function initBoard() {
+        playerDiceContainer.innerHTML = '';
+        houseDiceContainer.innerHTML = '';
+        for(let i=0; i<5; i++) {
+            playerDiceContainer.innerHTML += createDieHTML(1);
+            houseDiceContainer.innerHTML += createDieHTML(1);
+        }
+        resetUI();
+    }
+
+    function resetUI() {
+        overlay.classList.remove('active');
+        playerHandLabel.textContent = "Ready";
+        houseHandLabel.textContent = "Waiting...";
+        playerHandLabel.classList.remove('visible');
+        houseHandLabel.classList.remove('visible');
+        
+        playerSection.classList.add('active-turn');
+        houseSection.classList.remove('active-turn');
+        
+        rollBtn.disabled = false;
+        rollBtn.textContent = "ROLL DICE";
+    }
+
+    // --- ANIMATION ---
+    // Rolls a single die element and returns its final value promise
+    function rollSingleDie(dieElement) {
+        return new Promise(resolve => {
+            dieElement.classList.add('rolling');
+            
+            // Visual noise (random numbers flipping)
+            let changes = 0;
+            const interval = setInterval(() => {
+                dieElement.dataset.val = randomFace();
+                changes++;
+                if (changes > 8) { // Number of flips before stopping
+                    clearInterval(interval);
+                    dieElement.classList.remove('rolling');
+                    const finalVal = randomFace();
+                    dieElement.dataset.val = finalVal;
+                    resolve(finalVal);
+                }
+            }, 60); // Speed of flip
+        });
+    }
+
+    // --- GAME LOOP ---
+    async function handleGameSequence() {
+        rollBtn.disabled = true;
+        rollBtn.textContent = "ROLLING...";
+        
+        // 1. Reset Board
+        playerHandLabel.textContent = "";
+        houseHandLabel.textContent = "";
+
+        // 2. ROLL PLAYER (One by One)
+        playerSection.classList.add('active-turn');
+        houseSection.classList.remove('active-turn');
+        
+        const playerDiceEls = document.querySelectorAll('#player-dice .die');
+        const playerResults = [];
+
+        for (const die of playerDiceEls) {
+            const val = await rollSingleDie(die);
+            playerResults.push(val);
+            await sleep(100); // Small pause between dice
+        }
+
+        // Show Player Result immediately
+        const playerHand = analyzeHand(playerResults);
+        playerHandLabel.textContent = playerHand.name;
+        playerHandLabel.classList.add('visible');
+
+        await sleep(800); // Dramatic pause before House starts
+
+        // 3. ROLL HOUSE (One by One)
+        playerSection.classList.remove('active-turn');
+        houseSection.classList.add('active-turn');
+
+        const houseDiceEls = document.querySelectorAll('#house-dice .die');
+        const houseResults = [];
+
+        for (const die of houseDiceEls) {
+            const val = await rollSingleDie(die);
+            houseResults.push(val);
+            await sleep(100);
+        }
+
+        // Show House Result
+        const houseHand = analyzeHand(houseResults);
+        houseHandLabel.textContent = houseHand.name;
+        houseHandLabel.classList.add('visible');
+
+        await sleep(500);
+
+        // 4. DETERMINE WINNER
+        determineWinner(houseHand, playerHand);
+    }
+
+    // --- LOGIC (Poker Hand Analysis) ---
+    function analyzeHand(diceValues) {
+        const sorted = [...diceValues].sort((a,b) => b-a);
+        const counts = {};
+        sorted.forEach(v => counts[v] = (counts[v] || 0) + 1);
+        const freqs = Object.values(counts).sort((a,b) => b-a);
+
+        // Check Straights
+        const str = sorted.join('');
+        if (str === '65432') return { rank: 5, name: "Big Straight", vals: [6] };
+        if (str === '54321') return { rank: 5, name: "Small Straight", vals: [5] };
+
+        // Five of a Kind
+        if (freqs[0] === 5) return { rank: 8, name: "Five of a Kind", vals: [sorted[0]] };
+
+        // Four of a Kind
+        if (freqs[0] === 4) {
+            const quadVal = parseInt(Object.keys(counts).find(k => counts[k] === 4));
+            return { rank: 7, name: "Four of a Kind", vals: [quadVal] };
+        }
+
+        // Full House
+        if (freqs[0] === 3 && freqs[1] === 2) {
+            const tripVal = parseInt(Object.keys(counts).find(k => counts[k] === 3));
+            const pairVal = parseInt(Object.keys(counts).find(k => counts[k] === 2));
+            return { rank: 6, name: "Full House", vals: [tripVal, pairVal] };
+        }
+
+        // Three of a Kind
+        if (freqs[0] === 3) {
+            const tripVal = parseInt(Object.keys(counts).find(k => counts[k] === 3));
+            return { rank: 4, name: "Three of a Kind", vals: [tripVal] };
+        }
+
+        // Two Pair
+        if (freqs[0] === 2 && freqs[1] === 2) {
+            const pairs = Object.keys(counts).filter(k => counts[k] === 2).map(Number).sort((a,b) => b-a);
+            const kicker = sorted.find(v => !pairs.includes(v));
+            return { rank: 3, name: "Two Pair", vals: [pairs[0], pairs[1], kicker] };
+        }
+
+        // One Pair
+        if (freqs[0] === 2) {
+            const pairVal = parseInt(Object.keys(counts).find(k => counts[k] === 2));
+            return { rank: 2, name: "One Pair", vals: [pairVal] };
+        }
+
+        // High Card
+        return { rank: 1, name: "High Card", vals: [sorted[0]] };
+    }
+
+    function determineWinner(house, player) {
+        let winner = null; // 'house', 'player', 'draw'
+
+        if (player.rank > house.rank) winner = 'player';
+        else if (house.rank > player.rank) winner = 'house';
+        else {
+            // Tie-breaker on values
+            for (let i = 0; i < player.vals.length; i++) {
+                if ((player.vals[i] || 0) > (house.vals[i] || 0)) { winner = 'player'; break; }
+                if ((house.vals[i] || 0) > (player.vals[i] || 0)) { winner = 'house'; break; }
+            }
+            if (!winner) winner = 'draw';
+        }
+
+        // Display Results
+        if (winner === 'draw') {
+            resultTitle.textContent = "SUDDEN DEATH!";
+            resultTitle.className = "draw-text";
+            resultMsg.textContent = "Draw! Rerolling automatically...";
+            overlay.classList.add('active');
+            setTimeout(() => {
+                overlay.classList.remove('active');
+                handleGameSequence(); // Recursion for re-roll
+            }, 2000);
+        } else if (winner === 'player') {
+            resultTitle.textContent = "YOU WIN!";
+            resultTitle.className = "win-text";
+            resultMsg.textContent = `${player.name} beats ${house.name}`;
+            overlay.classList.add('active');
+        } else {
+            resultTitle.textContent = "HOUSE WINS";
+            resultTitle.className = "lose-text";
+            resultMsg.textContent = `${house.name} beats ${player.name}`;
+            overlay.classList.add('active');
+        }
+    }
+
+    // --- EVENT LISTENERS ---
+    initBoard();
+    rollBtn.addEventListener('click', handleGameSequence);
+    restartBtn.addEventListener('click', resetUI);
+
+});
+</script>
+</body>
+</html>
