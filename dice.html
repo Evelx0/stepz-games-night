@@ -14,6 +14,7 @@
             --felt-color: #0e1a0e;
             --gold-accent: #d4af37;
             --primary-red: #c41e3a;
+            --secondary-blue: #0056b3;
             --text-white: #ffffff;
             --dice-white: #f0f0f0;
             --dice-dot: #111;
@@ -37,7 +38,7 @@
         .game-container {
             width: 100%;
             max-width: 800px;
-            background: rgba(0, 0, 0, 0.85);
+            background: rgba(0, 0, 0, 0.9);
             border: 2px solid var(--gold-accent);
             border-radius: 20px;
             padding: 30px;
@@ -142,14 +143,20 @@
             padding: 8px;
             position: relative;
             transform: scale(1);
-            transition: transform 0.2s;
+            transition: transform 0.2s, border 0.2s;
         }
         
-        /* Highlight the die currently rolling */
+        /* Highlight dice about to be rolled in manual mode */
+        .die.pending-roll {
+            border: 2px solid var(--gold-accent);
+            box-shadow: 0 0 10px var(--gold-accent);
+        }
+
         .die.rolling {
             box-shadow: 0 0 15px var(--primary-red);
             transform: scale(1.1);
             z-index: 10;
+            border: none;
         }
 
         .dot {
@@ -162,7 +169,6 @@
             justify-self: center;
         }
 
-        /* Dot Positions */
         .dot:nth-child(1) { grid-area: g; } 
         .dot:nth-child(2) { grid-area: a; } 
         .dot:nth-child(3) { grid-area: b; } 
@@ -171,7 +177,6 @@
         .dot:nth-child(6) { grid-area: e; } 
         .dot:nth-child(7) { grid-area: f; } 
 
-        /* Visibility Logic */
         .die[data-val="1"] .dot:not(:nth-child(1)) { display: none; }
         .die[data-val="2"] .dot:not(:nth-child(2)):not(:nth-child(3)) { display: none; }
         .die[data-val="3"] .dot:not(:nth-child(1)):not(:nth-child(2)):not(:nth-child(3)) { display: none; }
@@ -180,27 +185,41 @@
         .die[data-val="6"] .dot:nth-child(1) { display: none; }
 
         /* --- CONTROLS --- */
-        .controls { margin-top: 30px; }
+        .controls { 
+            margin-top: 30px; 
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
 
         .btn {
             border: none;
             border-radius: 8px;
-            padding: 15px 50px;
-            font-size: 1.5rem;
+            padding: 15px 30px;
+            font-size: 1.2rem;
             font-weight: 700;
             font-family: var(--font-display);
             cursor: pointer;
             text-transform: uppercase;
             transition: all 0.2s;
             box-shadow: 0 5px 15px rgba(0,0,0,0.3);
-            background: var(--primary-red);
             color: white;
+            min-width: 180px;
+        }
+
+        .btn-auto {
+            background: var(--primary-red);
             border: 2px solid #ff4d6d;
+        }
+
+        .btn-manual {
+            background: var(--secondary-blue);
+            border: 2px solid #4d94ff;
         }
 
         .btn:hover:not(:disabled) {
             transform: scale(1.05);
-            box-shadow: 0 0 20px var(--primary-red);
+            box-shadow: 0 0 20px currentColor;
         }
 
         .btn:disabled {
@@ -212,31 +231,89 @@
         /* --- OVERLAYS --- */
         .overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.95);
+            background: rgba(0, 0, 0, 0.98);
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             opacity: 0; visibility: hidden; transition: all 0.4s ease;
             z-index: 100;
             border-radius: 20px;
             backdrop-filter: blur(5px);
+            padding: 20px;
+            overflow-y: auto;
         }
         .overlay.active { opacity: 1; visibility: visible; }
 
         .overlay h2 {
             font-family: var(--font-display);
-            font-size: 3rem;
-            margin-bottom: 10px;
-            text-shadow: 0 0 10px currentColor;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            color: var(--gold-accent);
+            text-transform: uppercase;
         }
 
-        .win-text { color: #28a745; }
-        .lose-text { color: var(--primary-red); }
+        .win-text { color: #28a745; text-shadow: 0 0 10px #28a745; }
+        .lose-text { color: var(--primary-red); text-shadow: 0 0 10px var(--primary-red); }
         .draw-text { color: var(--gold-accent); }
 
-        .overlay p {
-            font-size: 1.5rem;
-            color: #ddd;
+        .overlay p { font-size: 1.2rem; color: #ddd; margin-bottom: 20px; max-width: 90%; }
+
+        /* RULES LIST */
+        .rules-list {
+            text-align: left;
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            border-radius: 10px;
             margin-bottom: 30px;
-            max-width: 80%;
+            border: 1px solid #333;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        .rules-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .rules-row:last-child { border-bottom: none; }
+        .rules-rank { color: var(--gold-accent); font-weight: bold; }
+        .rules-desc { color: #aaa; font-size: 0.9rem; }
+
+        /* COMPARISON DISPLAY */
+        .comparison-wrapper {
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .comp-row {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .comp-label {
+            font-size: 0.9rem;
+            color: #888;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .mini-dice-row {
+            display: flex;
+            gap: 5px;
+            transform: scale(0.7); /* Smaller dice for popup */
+        }
+        
+        .vs-badge {
+            font-family: var(--font-display);
+            font-size: 1.5rem;
+            color: var(--primary-red);
+            margin: 5px 0;
+            font-weight: bold;
         }
 
         .btn-restart {
@@ -244,11 +321,14 @@
             color: #000;
             border: none;
             border-radius: 5px;
-            padding: 10px 30px;
+            padding: 15px 40px;
             font-weight: bold;
             cursor: pointer;
             font-size: 1.2rem;
+            margin-top: 10px;
+            text-transform: uppercase;
         }
+        .btn-restart:hover { transform: scale(1.05); }
 
     </style>
 </head>
@@ -268,30 +348,62 @@
                     <span>PANELIST</span>
                     <span class="hand-name" id="player-hand-name">Ready</span>
                 </div>
-                <div class="dice-container" id="player-dice">
-                    </div>
+                <div class="dice-container" id="player-dice"></div>
             </div>
 
             <hr style="border: 0; border-top: 1px dashed #444; margin: 10px 0;">
 
             <div class="section" id="house-section">
                 <div class="section-title">
-                    <span>STEPZ</span>
+                    <span>STEPZ (HOUSE)</span>
                     <span class="hand-name" id="house-hand-name">Waiting...</span>
                 </div>
-                <div class="dice-container" id="house-dice">
-                    </div>
+                <div class="dice-container" id="house-dice"></div>
             </div>
 
         </div>
 
         <div class="controls">
-            <button class="btn" id="roll-btn">ROLL</button>
+            <button class="btn btn-auto" id="roll-auto-btn">AUTO ROLL</button>
+            <button class="btn btn-manual" id="roll-single-btn">ROLL SINGLE</button>
+        </div>
+
+        <div class="overlay active" id="rules-overlay">
+            <h2>Game Rules</h2>
+            <p>You and Stepz will both roll 5 dice. The highest "Poker Hand" wins. Use <strong>Auto Roll</strong> for speed or <strong>Roll Single</strong> for suspense!</p>
+            
+            <div class="rules-list">
+                <div class="rules-row"><span class="rules-rank">1. Five of a Kind</span> <span class="rules-desc">5 matching dice</span></div>
+                <div class="rules-row"><span class="rules-rank">2. Four of a Kind</span> <span class="rules-desc">4 matching dice</span></div>
+                <div class="rules-row"><span class="rules-rank">3. Full House</span> <span class="rules-desc">3 match + 2 match</span></div>
+                <div class="rules-row"><span class="rules-rank">4. Straight</span> <span class="rules-desc">1-2-3-4-5 or 2-3-4-5-6</span></div>
+                <div class="rules-row"><span class="rules-rank">5. Three of a Kind</span> <span class="rules-desc">3 matching dice</span></div>
+                <div class="rules-row"><span class="rules-rank">6. Two Pair</span> <span class="rules-desc">2 pairs of matching dice</span></div>
+                <div class="rules-row"><span class="rules-rank">7. One Pair</span> <span class="rules-desc">1 pair of matching dice</span></div>
+                <div class="rules-row"><span class="rules-rank">8. High Card</span> <span class="rules-desc">Highest single die</span></div>
+            </div>
+
+            <button class="btn-restart" id="start-game-btn">START GAME</button>
         </div>
 
         <div class="overlay" id="result-overlay">
             <h2 id="result-title"></h2>
             <p id="result-message"></p>
+            
+            <div class="comparison-wrapper">
+                <div class="comp-row">
+                    <span class="comp-label">Panelist Rolled:</span>
+                    <div class="mini-dice-row" id="final-player-dice"></div>
+                </div>
+                
+                <div class="vs-badge">VS</div>
+
+                <div class="comp-row">
+                    <span class="comp-label">Stepz Rolled:</span>
+                    <div class="mini-dice-row" id="final-house-dice"></div>
+                </div>
+            </div>
+
             <button class="btn-restart" id="restart-btn">PLAY AGAIN</button>
         </div>
 
@@ -307,20 +419,33 @@ document.addEventListener('DOMContentLoaded', () => {
     const houseDiceContainer = document.getElementById('house-dice');
     const playerHandLabel = document.getElementById('player-hand-name');
     const houseHandLabel = document.getElementById('house-hand-name');
-    const rollBtn = document.getElementById('roll-btn');
-    const overlay = document.getElementById('result-overlay');
+    
+    // Buttons
+    const rollAutoBtn = document.getElementById('roll-auto-btn');
+    const rollSingleBtn = document.getElementById('roll-single-btn');
+    const startGameBtn = document.getElementById('start-game-btn');
+    const restartBtn = document.getElementById('restart-btn');
+
+    // Overlays
+    const rulesOverlay = document.getElementById('rules-overlay');
+    const resultOverlay = document.getElementById('result-overlay');
     const resultTitle = document.getElementById('result-title');
     const resultMsg = document.getElementById('result-message');
-    const restartBtn = document.getElementById('restart-btn');
+    const finalPlayerDice = document.getElementById('final-player-dice');
+    const finalHouseDice = document.getElementById('final-house-dice');
+
+    // --- STATE ---
+    let manualStep = 0; // 0-4 Player, 5-9 House
+    let gameInProgress = false;
 
     // --- HELPERS ---
     const sleep = (ms) => new Promise(r => setTimeout(r, ms));
     const randomFace = () => Math.floor(Math.random() * 6) + 1;
 
     // --- SETUP ---
-    function createDieHTML(val = 1) {
+    function createDieHTML(val = 1, index) {
         return `
-            <div class="die" data-val="${val}">
+            <div class="die" id="die-${index}" data-val="${val}">
                 <span class="dot"></span><span class="dot"></span>
                 <span class="dot"></span><span class="dot"></span>
                 <span class="dot"></span><span class="dot"></span>
@@ -333,14 +458,15 @@ document.addEventListener('DOMContentLoaded', () => {
         playerDiceContainer.innerHTML = '';
         houseDiceContainer.innerHTML = '';
         for(let i=0; i<5; i++) {
-            playerDiceContainer.innerHTML += createDieHTML(1);
-            houseDiceContainer.innerHTML += createDieHTML(1);
+            // Player dice IDs: die-0 to die-4
+            playerDiceContainer.innerHTML += createDieHTML(1, i);
+            // House dice IDs: die-5 to die-9
+            houseDiceContainer.innerHTML += createDieHTML(1, i+5);
         }
-        resetUI();
     }
 
     function resetUI() {
-        overlay.classList.remove('active');
+        resultOverlay.classList.remove('active');
         playerHandLabel.textContent = "Ready";
         houseHandLabel.textContent = "Waiting...";
         playerHandLabel.classList.remove('visible');
@@ -349,143 +475,190 @@ document.addEventListener('DOMContentLoaded', () => {
         playerSection.classList.add('active-turn');
         houseSection.classList.remove('active-turn');
         
-        rollBtn.disabled = false;
-        rollBtn.textContent = "ROLL DICE";
+        rollAutoBtn.disabled = false;
+        rollSingleBtn.disabled = false;
+        manualStep = 0;
+        gameInProgress = false;
+
+        // Reset visual state of all dice
+        document.querySelectorAll('.die').forEach(d => {
+            d.classList.remove('pending-roll');
+            d.classList.remove('rolling');
+        });
     }
 
     // --- ANIMATION ---
-    // Rolls a single die element and returns its final value promise
     function rollSingleDie(dieElement) {
         return new Promise(resolve => {
             dieElement.classList.add('rolling');
+            dieElement.classList.remove('pending-roll');
             
-            // Visual noise (random numbers flipping)
             let changes = 0;
             const interval = setInterval(() => {
                 dieElement.dataset.val = randomFace();
                 changes++;
-                if (changes > 8) { // Number of flips before stopping
+                if (changes > 8) { 
                     clearInterval(interval);
                     dieElement.classList.remove('rolling');
                     const finalVal = randomFace();
                     dieElement.dataset.val = finalVal;
                     resolve(finalVal);
                 }
-            }, 60); // Speed of flip
+            }, 60);
         });
     }
 
-    // --- GAME LOOP ---
-    async function handleGameSequence() {
-        rollBtn.disabled = true;
-        rollBtn.textContent = "ROLLING...";
+    // --- AUTO ROLL LOGIC ---
+    async function handleAutoSequence() {
+        if (gameInProgress) return;
+        gameInProgress = true;
         
-        // 1. Reset Board
+        rollAutoBtn.disabled = true;
+        rollSingleBtn.disabled = true;
+        
         playerHandLabel.textContent = "";
         houseHandLabel.textContent = "";
 
-        // 2. ROLL PLAYER (One by One)
+        // 1. ROLL PLAYER
         playerSection.classList.add('active-turn');
         houseSection.classList.remove('active-turn');
         
         const playerDiceEls = document.querySelectorAll('#player-dice .die');
         const playerResults = [];
-
         for (const die of playerDiceEls) {
             const val = await rollSingleDie(die);
             playerResults.push(val);
-            await sleep(100); // Small pause between dice
+            await sleep(100);
         }
-
-        // Show Player Result immediately
         const playerHand = analyzeHand(playerResults);
         playerHandLabel.textContent = playerHand.name;
         playerHandLabel.classList.add('visible');
 
-        await sleep(800); // Dramatic pause before House starts
+        await sleep(800); 
 
-        // 3. ROLL HOUSE (One by One)
+        // 2. ROLL HOUSE
         playerSection.classList.remove('active-turn');
         houseSection.classList.add('active-turn');
 
         const houseDiceEls = document.querySelectorAll('#house-dice .die');
         const houseResults = [];
-
         for (const die of houseDiceEls) {
             const val = await rollSingleDie(die);
             houseResults.push(val);
             await sleep(100);
         }
-
-        // Show House Result
         const houseHand = analyzeHand(houseResults);
         houseHandLabel.textContent = houseHand.name;
         houseHandLabel.classList.add('visible');
 
         await sleep(500);
 
-        // 4. DETERMINE WINNER
         determineWinner(houseHand, playerHand);
     }
 
-    // --- LOGIC (Poker Hand Analysis) ---
+    // --- MANUAL ROLL LOGIC ---
+    async function handleManualRoll() {
+        gameInProgress = true;
+        rollAutoBtn.disabled = true; // Disable Auto once manual starts
+
+        // Highlight Active Turn Area
+        if (manualStep < 5) {
+            playerSection.classList.add('active-turn');
+            houseSection.classList.remove('active-turn');
+            playerHandLabel.textContent = "Rolling...";
+        } else {
+            playerSection.classList.remove('active-turn');
+            houseSection.classList.add('active-turn');
+            houseHandLabel.textContent = "Rolling...";
+        }
+
+        // Identify target die
+        const targetDie = document.getElementById(`die-${manualStep}`);
+        if (!targetDie) return;
+
+        // Roll it
+        rollSingleBtn.disabled = true; // Lock button during animation
+        await rollSingleDie(targetDie);
+        manualStep++;
+        rollSingleBtn.disabled = false; // Unlock
+
+        // CHECK MILESTONES
+        if (manualStep === 5) {
+            // Player Finished
+            const pDice = Array.from(document.querySelectorAll('#player-dice .die')).map(d => parseInt(d.dataset.val));
+            const pHand = analyzeHand(pDice);
+            playerHandLabel.textContent = pHand.name;
+            playerHandLabel.classList.add('visible');
+            // Switch Turn Visuals
+            await sleep(500);
+            playerSection.classList.remove('active-turn');
+            houseSection.classList.add('active-turn');
+        } 
+        else if (manualStep === 10) {
+            // House Finished
+            const hDice = Array.from(document.querySelectorAll('#house-dice .die')).map(d => parseInt(d.dataset.val));
+            const hHand = analyzeHand(hDice);
+            houseHandLabel.textContent = hHand.name;
+            houseHandLabel.classList.add('visible');
+            
+            rollSingleBtn.disabled = true; // Game Over
+            await sleep(500);
+            
+            // Re-calc Player hand just to be safe for comparison
+            const pDice = Array.from(document.querySelectorAll('#player-dice .die')).map(d => parseInt(d.dataset.val));
+            const pHand = analyzeHand(pDice);
+            
+            determineWinner(hHand, pHand);
+        } else {
+            // Prepare visual indicator for NEXT die
+            const nextDie = document.getElementById(`die-${manualStep}`);
+            if(nextDie) nextDie.classList.add('pending-roll');
+        }
+    }
+
+    // --- LOGIC ---
     function analyzeHand(diceValues) {
         const sorted = [...diceValues].sort((a,b) => b-a);
         const counts = {};
         sorted.forEach(v => counts[v] = (counts[v] || 0) + 1);
         const freqs = Object.values(counts).sort((a,b) => b-a);
 
-        // Check Straights
         const str = sorted.join('');
         if (str === '65432') return { rank: 5, name: "Big Straight", vals: [6] };
         if (str === '54321') return { rank: 5, name: "Small Straight", vals: [5] };
 
-        // Five of a Kind
         if (freqs[0] === 5) return { rank: 8, name: "Five of a Kind", vals: [sorted[0]] };
-
-        // Four of a Kind
         if (freqs[0] === 4) {
             const quadVal = parseInt(Object.keys(counts).find(k => counts[k] === 4));
             return { rank: 7, name: "Four of a Kind", vals: [quadVal] };
         }
-
-        // Full House
         if (freqs[0] === 3 && freqs[1] === 2) {
             const tripVal = parseInt(Object.keys(counts).find(k => counts[k] === 3));
             const pairVal = parseInt(Object.keys(counts).find(k => counts[k] === 2));
             return { rank: 6, name: "Full House", vals: [tripVal, pairVal] };
         }
-
-        // Three of a Kind
         if (freqs[0] === 3) {
             const tripVal = parseInt(Object.keys(counts).find(k => counts[k] === 3));
             return { rank: 4, name: "Three of a Kind", vals: [tripVal] };
         }
-
-        // Two Pair
         if (freqs[0] === 2 && freqs[1] === 2) {
             const pairs = Object.keys(counts).filter(k => counts[k] === 2).map(Number).sort((a,b) => b-a);
             const kicker = sorted.find(v => !pairs.includes(v));
             return { rank: 3, name: "Two Pair", vals: [pairs[0], pairs[1], kicker] };
         }
-
-        // One Pair
         if (freqs[0] === 2) {
             const pairVal = parseInt(Object.keys(counts).find(k => counts[k] === 2));
             return { rank: 2, name: "One Pair", vals: [pairVal] };
         }
-
-        // High Card
         return { rank: 1, name: "High Card", vals: [sorted[0]] };
     }
 
     function determineWinner(house, player) {
-        let winner = null; // 'house', 'player', 'draw'
+        let winner = null;
 
         if (player.rank > house.rank) winner = 'player';
         else if (house.rank > player.rank) winner = 'house';
         else {
-            // Tie-breaker on values
             for (let i = 0; i < player.vals.length; i++) {
                 if ((player.vals[i] || 0) > (house.vals[i] || 0)) { winner = 'player'; break; }
                 if ((house.vals[i] || 0) > (player.vals[i] || 0)) { winner = 'house'; break; }
@@ -493,32 +666,44 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!winner) winner = 'draw';
         }
 
-        // Display Results
+        // PREPARE RESULT DISPLAY
+        finalPlayerDice.innerHTML = playerDiceContainer.innerHTML;
+        finalHouseDice.innerHTML = houseDiceContainer.innerHTML;
+        // Clean up classes in copy
+        finalPlayerDice.querySelectorAll('.die').forEach(d => {d.id=''; d.className='die';});
+        finalHouseDice.querySelectorAll('.die').forEach(d => {d.id=''; d.className='die';});
+
         if (winner === 'draw') {
             resultTitle.textContent = "SUDDEN DEATH!";
             resultTitle.className = "draw-text";
-            resultMsg.textContent = "Draw! Rerolling automatically...";
-            overlay.classList.add('active');
+            resultMsg.textContent = "Both hands are equal! Rerolling automatically...";
+            resultOverlay.classList.add('active');
             setTimeout(() => {
-                overlay.classList.remove('active');
-                handleGameSequence(); // Recursion for re-roll
-            }, 2000);
+                resetUI();
+                handleAutoSequence(); // Force auto roll for sudden death
+            }, 3000);
         } else if (winner === 'player') {
             resultTitle.textContent = "YOU WIN!";
             resultTitle.className = "win-text";
             resultMsg.textContent = `${player.name} beats ${house.name}`;
-            overlay.classList.add('active');
+            resultOverlay.classList.add('active');
         } else {
-            resultTitle.textContent = "HOUSE WINS";
+            resultTitle.textContent = "STEPZ WINS";
             resultTitle.className = "lose-text";
             resultMsg.textContent = `${house.name} beats ${player.name}`;
-            overlay.classList.add('active');
+            resultOverlay.classList.add('active');
         }
     }
 
-    // --- EVENT LISTENERS ---
+    // --- LISTENERS ---
     initBoard();
-    rollBtn.addEventListener('click', handleGameSequence);
+    
+    startGameBtn.addEventListener('click', () => {
+        rulesOverlay.classList.remove('active');
+    });
+
+    rollAutoBtn.addEventListener('click', handleAutoSequence);
+    rollSingleBtn.addEventListener('click', handleManualRoll);
     restartBtn.addEventListener('click', resetUI);
 
 });
